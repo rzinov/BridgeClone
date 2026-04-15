@@ -1,0 +1,1463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Bridge — Campus OS</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        :root {
+            --navy: #0A1128;
+            --navy-mid: #162040;
+            --navy-soft: #1E2D50;
+            --accent: #4ADE80;
+            --accent-dim: rgba(74,222,128,0.15);
+            --warm: #F97316;
+            --light: #F7F8FC;
+            --card: #FFFFFF;
+            --text: #0A1128;
+            --muted: #8892A4;
+            --border: #E8EAF0;
+            --red: #F87171;
+            --blue-pin: #3B82F6;
+            --shadow-sm: 0 1px 3px rgba(10,17,40,0.08), 0 1px 2px rgba(10,17,40,0.04);
+            --shadow-md: 0 4px 16px rgba(10,17,40,0.10), 0 2px 6px rgba(10,17,40,0.06);
+            --shadow-lg: 0 20px 50px rgba(10,17,40,0.18), 0 8px 20px rgba(10,17,40,0.08);
+            --radius: 16px;
+            --radius-sm: 10px;
+            --radius-pill: 100px;
+        }
+
+        *, *::before, *::after { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            background: #0e1420;
+            background-image: radial-gradient(ellipse at 30% 20%, rgba(74,222,128,0.06) 0%, transparent 50%),
+                              radial-gradient(ellipse at 80% 80%, rgba(59,130,246,0.06) 0%, transparent 50%);
+            font-family: 'DM Sans', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        /* ── Phone Shell ── */
+        #phone {
+            width: 393px;
+            height: 852px;
+            background: var(--light);
+            border-radius: 48px;
+            box-shadow: var(--shadow-lg), inset 0 0 0 1px rgba(255,255,255,0.06);
+            overflow: hidden;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            border: 9px solid #111827;
+            outline: 1px solid rgba(255,255,255,0.04);
+        }
+
+        /* ── Status Bar ── */
+        .status-bar {
+            background: var(--navy);
+            height: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 24px;
+            font-size: 9px;
+            color: rgba(255,255,255,0.5);
+            letter-spacing: 0.3px;
+            flex-shrink: 0;
+        }
+
+        /* ── Top Bar ── */
+        .top-bar {
+            background: var(--navy);
+            color: white;
+            padding: 10px 20px 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+            position: relative;
+            z-index: 999;
+        }
+        .top-bar::after {
+            content: '';
+            position: absolute;
+            bottom: 0; left: 0; right: 0;
+            height: 1px;
+            background: rgba(255,255,255,0.06);
+        }
+
+        .logo {
+            font-family: 'DM Serif Display', serif;
+            font-style: italic;
+            font-size: 22px;
+            letter-spacing: -0.5px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: white;
+        }
+        .logo-icon {
+            width: 28px;
+            height: 28px;
+            background: var(--accent);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-style: normal;
+            font-size: 14px;
+            flex-shrink: 0;
+        }
+
+        /* ── Toggle ── */
+        .toggle-pill {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255,255,255,0.07);
+            border: 1px solid rgba(255,255,255,0.1);
+            padding: 5px 10px 5px 14px;
+            border-radius: var(--radius-pill);
+            cursor: pointer;
+            user-select: none;
+            transition: background 0.2s;
+        }
+        .toggle-pill:hover { background: rgba(255,255,255,0.11); }
+        .toggle-label { font-size: 12px; font-weight: 500; color: rgba(255,255,255,0.85); }
+        .toggle-track {
+            width: 38px; height: 21px;
+            background: var(--accent);
+            border-radius: 100px;
+            position: relative;
+            transition: background 0.25s;
+            flex-shrink: 0;
+        }
+        .toggle-track.off { background: rgba(255,255,255,0.2); }
+        .toggle-thumb {
+            width: 17px; height: 17px;
+            background: white;
+            border-radius: 50%;
+            position: absolute;
+            top: 2px; right: 2px;
+            transition: transform 0.25s cubic-bezier(.4,0,.2,1);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+        }
+        .toggle-track.off .toggle-thumb { transform: translateX(-17px); }
+
+        /* ── Screens ── */
+        .screen {
+            flex: 1;
+            overflow-y: auto;
+            display: none;
+            background: var(--light);
+            position: relative;
+        }
+        .screen.active { display: flex; flex-direction: column; }
+        #screen-map {
+            display: none;
+            height: 100%;
+            width: 100%;
+        }
+        #screen-map.active { display: block; }
+        #screen-map .leaflet-container { background: #e8e0d8; }
+
+        /* ── Bottom Nav ── */
+        .bottom-nav {
+            background: var(--navy);
+            height: 72px;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            flex-shrink: 0;
+            position: relative;
+            z-index: 999;
+            padding: 0 8px 8px;
+        }
+        .bottom-nav::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 1px;
+            background: rgba(255,255,255,0.07);
+        }
+        .nav-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 3px;
+            cursor: pointer;
+            padding: 8px 20px 4px;
+            border-radius: var(--radius-sm);
+            transition: all 0.2s;
+            position: relative;
+        }
+        .nav-btn:hover { background: rgba(255,255,255,0.05); }
+        .nav-btn .nav-icon {
+            font-size: 20px;
+            opacity: 0.35;
+            transition: all 0.2s;
+            filter: grayscale(1);
+        }
+        .nav-btn .nav-dot {
+            width: 3px; height: 3px;
+            border-radius: 50%;
+            background: transparent;
+            transition: background 0.2s;
+        }
+        .nav-btn.active .nav-icon { opacity: 1; filter: none; }
+        .nav-btn.active .nav-dot { background: var(--accent); }
+
+        /* ── Section Header ── */
+        .section-header {
+            padding: 18px 20px 12px;
+            background: var(--card);
+            border-bottom: 1px solid var(--border);
+        }
+        .section-header h2 {
+            margin: 0;
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        /* ── Intent Notes (Stories row) ── */
+        .notes-row {
+            background: var(--card);
+            border-bottom: 1px solid var(--border);
+            padding: 24px 0 12px; /* Fixed clipping issue */
+            overflow-x: auto;
+            display: flex;
+            gap: 0;
+            scrollbar-width: none;
+        }
+        .notes-row::-webkit-scrollbar { display: none; }
+        .note-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            min-width: 76px;
+            padding: 0 8px;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+        .note-ring {
+            width: 54px; height: 54px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent), #3B82F6);
+            padding: 2.5px;
+            position: relative;
+        }
+        .note-ring.you { background: linear-gradient(135deg, var(--accent), #22d3ee); }
+        .note-ring.muted { background: var(--border); }
+        .note-inner {
+            width: 100%; height: 100%;
+            border-radius: 50%;
+            background: var(--navy);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            border: 2px solid var(--card);
+        }
+        .note-bubble-wrap {
+            position: relative;
+            margin-bottom: -6px;
+            height: 40px; /* Fixed clipping issue */
+            display: flex;
+            align-items: flex-end;
+        }
+        .note-bubble {
+            background: var(--navy);
+            color: white;
+            border-radius: 10px;
+            padding: 5px 8px;
+            font-size: 10px;
+            line-height: 1.3;
+            text-align: center;
+            max-width: 72px;
+            word-break: break-word;
+            box-shadow: var(--shadow-sm);
+            position: relative;
+        }
+        .note-bubble::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 50%;
+            transform: translateX(-50%);
+            border: 3px solid transparent;
+            border-top-color: var(--navy);
+        }
+        .note-name {
+            font-size: 10px;
+            font-weight: 500;
+            color: var(--text);
+            text-align: center;
+            line-height: 1.2;
+        }
+        .note-spotify {
+            font-size: 9px;
+            color: #1DB954;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 2px;
+        }
+
+        /* ── Chat List ── */
+        .chat-list { list-style: none; margin: 0; padding: 0; flex: 1; overflow-y: auto;}
+        .chat-item {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 14px 20px;
+            background: var(--card);
+            border-bottom: 1px solid var(--border);
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+        .chat-item:hover { background: #f3f5fb; }
+        .chat-item:active { background: var(--border); }
+        .avatar {
+            width: 46px; height: 46px;
+            border-radius: 50%;
+            background: var(--light);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            flex-shrink: 0;
+            border: 1px solid var(--border);
+        }
+        .chat-info { flex: 1; min-width: 0; }
+        .chat-name { font-size: 14px; font-weight: 600; color: var(--text); margin: 0 0 3px; }
+        .chat-preview { font-size: 12px; color: var(--muted); margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .chat-time { font-size: 11px; color: var(--muted); flex-shrink: 0; }
+
+        /* ── Active Chat Screen ── */
+        .chat-header {
+            display: flex;
+            align-items: center;
+            padding: 16px 20px;
+            background: var(--card);
+            border-bottom: 1px solid var(--border);
+            gap: 12px;
+        }
+        .back-btn {
+            background: none;
+            border: none;
+            font-size: 20px;
+            color: var(--navy);
+            cursor: pointer;
+            padding: 0;
+        }
+        .chat-messages {
+            flex: 1;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            overflow-y: auto;
+            background: var(--light);
+        }
+        .msg-bubble {
+            max-width: 75%;
+            padding: 10px 14px;
+            border-radius: 18px;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+        .msg-received {
+            background: var(--card);
+            color: var(--text);
+            border: 1px solid var(--border);
+            align-self: flex-start;
+            border-bottom-left-radius: 4px;
+        }
+        .msg-sent {
+            background: var(--navy);
+            color: white;
+            align-self: flex-end;
+            border-bottom-right-radius: 4px;
+        }
+        .chat-input-area {
+            padding: 14px 20px;
+            background: var(--card);
+            border-top: 1px solid var(--border);
+            display: flex;
+            gap: 10px;
+        }
+        .chat-input {
+            flex: 1;
+            background: var(--light);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-pill);
+            padding: 10px 16px;
+            font-size: 14px;
+            outline: none;
+        }
+        .send-btn {
+            background: var(--accent);
+            color: var(--navy);
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        /* ── Search ── */
+        .search-wrapper {
+            padding: 14px 20px 10px;
+            background: var(--card);
+            border-bottom: 1px solid var(--border);
+        }
+        .search-input-wrap {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: var(--light);
+            border: 1.5px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 10px 14px;
+            transition: border-color 0.2s;
+        }
+        .search-input-wrap:focus-within { border-color: var(--navy); }
+        .search-input-wrap span { font-size: 16px; opacity: 0.5; }
+        .search-input {
+            border: none;
+            background: none;
+            flex: 1;
+            font-size: 14px;
+            font-family: 'DM Sans', sans-serif;
+            color: var(--text);
+            outline: none;
+        }
+        .search-input::placeholder { color: var(--muted); }
+        .chip-row {
+            display: flex;
+            gap: 7px;
+            margin-top: 10px;
+            overflow-x: auto;
+            scrollbar-width: none;
+            padding-bottom: 2px;
+        }
+        .chip-row::-webkit-scrollbar { display: none; }
+        .chip {
+            background: var(--light);
+            border: 1.5px solid var(--border);
+            color: var(--muted);
+            padding: 5px 13px;
+            border-radius: var(--radius-pill);
+            font-size: 12px;
+            font-weight: 500;
+            white-space: nowrap;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .chip:hover { border-color: var(--navy); color: var(--navy); }
+        .chip.active { background: var(--navy); border-color: var(--navy); color: white; }
+
+        /* ── Profile ── */
+        .profile-hero {
+            background: linear-gradient(160deg, var(--navy) 0%, var(--navy-mid) 100%);
+            padding: 28px 24px 24px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+        .profile-avatar-wrap {
+            width: 80px; height: 80px;
+            border-radius: 50%;
+            background: var(--navy-soft);
+            border: 3px solid rgba(74,222,128,0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            font-weight: 700;
+            color: white;
+            margin-bottom: 4px;
+        }
+        .profile-name { font-size: 20px; font-weight: 700; color: white; margin: 0; }
+        .profile-sub { font-size: 13px; color: rgba(255,255,255,0.5); margin: 0; }
+        .profile-badges {
+            display: flex;
+            gap: 6px;
+            margin-top: 4px;
+        }
+        .badge {
+            background: rgba(74,222,128,0.15);
+            border: 1px solid rgba(74,222,128,0.3);
+            color: var(--accent);
+            font-size: 11px;
+            font-weight: 600;
+            padding: 3px 10px;
+            border-radius: var(--radius-pill);
+        }
+
+        /* ── Barcode Card ── */
+        .barcode-card {
+            margin: 16px;
+            border-radius: var(--radius);
+            background: linear-gradient(135deg, #1E3A8A 0%, #2563EB 50%, #3B82F6 100%);
+            padding: 20px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 8px 24px rgba(37,99,235,0.35);
+            overflow: hidden;
+            position: relative;
+        }
+        .barcode-card::before {
+            content: '';
+            position: absolute;
+            top: -40%;
+            right: -10%;
+            width: 200px;
+            height: 200px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 50%;
+        }
+        .barcode-card:hover { transform: translateY(-1px); box-shadow: 0 12px 32px rgba(37,99,235,0.4); }
+        .barcode-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+        .barcode-label { font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.7); letter-spacing: 0.5px; text-transform: uppercase; }
+        .barcode-chevron { color: rgba(255,255,255,0.5); font-size: 14px; transition: transform 0.3s; }
+        .barcode-card.open .barcode-chevron { transform: rotate(180deg); }
+        .barcode-pts { font-size: 38px; font-weight: 700; color: white; margin: 6px 0 2px; line-height: 1; }
+        .barcode-value { font-size: 12px; color: rgba(255,255,255,0.6); }
+        .barcode-body {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.35s cubic-bezier(.4,0,.2,1), opacity 0.3s;
+            opacity: 0;
+        }
+        .barcode-card.open .barcode-body { max-height: 140px; opacity: 1; margin-top: 16px; }
+        .barcode-divider { border: none; border-top: 1px solid rgba(255,255,255,0.15); margin-bottom: 12px; }
+        .barcode-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            margin-bottom: 6px;
+            color: rgba(255,255,255,0.75);
+        }
+        .barcode-row .pts { color: var(--accent); font-weight: 600; }
+
+        /* ── Settings List ── */
+        .settings-list { margin: 8px 16px 0; border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow-sm); }
+        .settings-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 15px 16px;
+            background: var(--card);
+            border-bottom: 1px solid var(--border);
+            cursor: pointer;
+            transition: background 0.15s;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text);
+        }
+        .settings-item:last-child { border-bottom: none; }
+        .settings-item:hover { background: #f3f5fb; }
+        .settings-item.danger { color: var(--red); }
+        .settings-icon { font-size: 18px; }
+        .settings-item .chevron { margin-left: auto; color: var(--muted); font-size: 12px; }
+
+        /* ── Modal ── */
+        .modal-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(10,17,40,0.65);
+            backdrop-filter: blur(4px);
+            z-index: 2000;
+            display: none;
+            flex-direction: column;
+            justify-content: flex-end;
+        }
+        .modal-overlay.active { display: flex; }
+        .modal-sheet {
+            background: var(--card);
+            border-radius: 24px 24px 0 0;
+            padding: 0 0 24px;
+            animation: slideUp 0.3s cubic-bezier(.32,0,.67,0) forwards;
+            transform: translateY(100%);
+        }
+        @keyframes slideUp { to { transform: translateY(0); } }
+        .modal-handle {
+            width: 36px; height: 4px;
+            background: var(--border);
+            border-radius: 2px;
+            margin: 12px auto 20px;
+        }
+        .modal-avatar-row {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 0 24px 16px;
+        }
+        .modal-avatar {
+            width: 72px; height: 72px;
+            border-radius: 50%;
+            background: var(--light);
+            border: 2px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+        .modal-name { font-size: 20px; font-weight: 700; color: var(--text); margin: 0; }
+        .modal-course { font-size: 13px; color: var(--muted); margin: 2px 0 0; }
+        .modal-rows { border-top: 1px solid var(--border); }
+        .modal-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 13px 24px;
+            border-bottom: 1px solid var(--border);
+        }
+        .modal-row:last-of-type { border-bottom: none; }
+        .modal-key { font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.4px; }
+        .modal-val { font-size: 13px; font-weight: 500; color: var(--text); text-align: right; max-width: 55%; }
+        .modal-close-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 28px; height: 28px;
+            border-radius: 50%;
+            background: var(--light);
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            cursor: pointer;
+            color: var(--muted);
+            transition: all 0.15s;
+        }
+        .modal-close-btn:hover { background: var(--border); color: var(--text); }
+        .modal-cta {
+            margin: 16px 24px 0;
+            width: calc(100% - 48px);
+            padding: 14px;
+            background: var(--navy);
+            color: white;
+            border: none;
+            border-radius: var(--radius-sm);
+            font-family: 'DM Sans', sans-serif;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.1s;
+        }
+        .modal-cta:hover { background: var(--navy-soft); }
+        .modal-cta:active { transform: scale(0.98); }
+        
+        /* Bridge Button State Classes */
+        .modal-cta.bridge-btn { background: var(--accent); color: var(--navy); }
+        .modal-cta.bridge-btn:hover { background: #34d399; }
+        .modal-cta.pending { background: var(--border); color: var(--muted); cursor: default; transform: none; }
+
+        /* ── Map Popup ── */
+        .leaflet-popup-content-wrapper {
+            background: var(--navy) !important;
+            color: white !important;
+            border-radius: 14px !important;
+            padding: 0 !important;
+            box-shadow: var(--shadow-lg) !important;
+            border: 1px solid rgba(255,255,255,0.08) !important;
+        }
+        .leaflet-popup-content {
+            margin: 0 !important;
+            padding: 14px 16px !important;
+            width: 200px !important;
+        }
+        .leaflet-popup-tip { background: var(--navy) !important; }
+        .leaflet-popup-close-button { display: none !important; }
+
+        .popup-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            background: rgba(74,222,128,0.12);
+            border: 1px solid rgba(74,222,128,0.25);
+            color: var(--accent);
+            font-size: 10px;
+            font-weight: 600;
+            padding: 2px 8px;
+            border-radius: var(--radius-pill);
+            margin-bottom: 6px;
+        }
+        .popup-title { font-size: 15px; font-weight: 700; margin: 0 0 4px; color: white; }
+        .popup-sub { font-size: 11px; color: rgba(255,255,255,0.5); margin: 0 0 2px; }
+        .popup-count { font-size: 12px; font-weight: 600; color: white; margin: 6px 0 0; display:flex; justify-content:space-between; align-items:center;}
+        .popup-friends { color: var(--accent); font-weight: 700; font-size: 11px;}
+        
+        .popup-btn {
+            background: var(--accent);
+            color: var(--navy);
+            border: none;
+            border-radius: var(--radius-sm);
+            padding: 8px 12px;
+            font-size: 12px;
+            font-family: 'DM Sans', sans-serif;
+            font-weight: 700;
+            margin-top: 12px;
+            width: 100%;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .popup-btn.going {
+            background: rgba(255,255,255,0.15);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.3);
+        }
+
+        /* ── Map Pins ── */
+        .map-pin {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transform: translate(-50%, -100%);
+        }
+        .pin-body {
+            width: 32px; height: 32px;
+            background: var(--navy);
+            border-radius: 50% 50% 50% 0;
+            transform: rotate(-45deg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(10,17,40,0.4);
+            border: 2px solid rgba(255,255,255,0.15);
+        }
+        .pin-body .pin-emoji { transform: rotate(45deg); font-size: 15px; }
+        .pin-label {
+            margin-top: 5px;
+            font-size: 10px;
+            font-weight: 700;
+            color: var(--navy);
+            text-shadow: 0 0 4px white, 0 0 8px white;
+            letter-spacing: 0.2px;
+        }
+
+        .user-pin-wrap {
+            transform: translate(-50%, -100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .user-pin-body {
+            width: 36px; height: 36px;
+            background: var(--accent);
+            border-radius: 50% 50% 50% 0;
+            transform: rotate(-45deg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 0 3px rgba(74,222,128,0.25), 0 4px 14px rgba(74,222,128,0.4);
+        }
+        .user-pin-body span { transform: rotate(45deg); font-size: 16px; }
+        .user-pin-label {
+            margin-top: 5px;
+            font-size: 10px;
+            font-weight: 800;
+            color: var(--navy);
+            text-shadow: 0 0 4px white, 0 0 8px white;
+            letter-spacing: 0.5px;
+        }
+
+        /* ── Map overlay chip ── */
+        .map-chip {
+            position: absolute;
+            bottom: 16px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--navy);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: var(--radius-pill);
+            padding: 8px 16px;
+            font-size: 12px;
+            font-weight: 600;
+            white-space: nowrap;
+            z-index: 500;
+            box-shadow: var(--shadow-md);
+            pointer-events: none;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .map-chip-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); animation: blink 1.6s infinite; }
+        @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+        /* ── Scrollbar ── */
+        .screen::-webkit-scrollbar { width: 3px; }
+        .screen::-webkit-scrollbar-track { background: transparent; }
+        .screen::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+        /* People list item detail */
+        .person-meta { display: flex; align-items: center; gap: 5px; margin-top: 2px; }
+        .person-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--accent); }
+        .person-tag { font-size: 11px; color: var(--muted); }
+
+        /* Crossed paths badge */
+        .cp-badge {
+            background: var(--accent-dim);
+            border: 1px solid rgba(74,222,128,0.25);
+            color: #16a34a;
+            font-size: 10px;
+            font-weight: 600;
+            padding: 2px 8px;
+            border-radius: var(--radius-pill);
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+    </style>
+</head>
+<body>
+
+<div id="phone">
+
+    <div class="status-bar">
+        <span>9:41</span>
+        <span>●●●●&nbsp; WiFi&nbsp; 🔋</span>
+    </div>
+
+    <div class="top-bar">
+        <div class="logo">
+            <div class="logo-icon">🎓</div>
+            Bridge
+        </div>
+        <div class="toggle-pill" onclick="toggleLoc()">
+            <span class="toggle-label" id="loc-label">Location On</span>
+            <div class="toggle-track" id="loc-track">
+                <div class="toggle-thumb"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="screen-map" class="screen active">
+        <div class="map-chip"><div class="map-chip-dot"></div>3 active hotspots nearby</div>
+    </div>
+
+    <div id="screen-messages" class="screen">
+        <div class="notes-row">
+            <div class="note-item" onclick="setIntentNote()">
+                <div style="display:flex;flex-direction:column;align-items:center;gap:3px;">
+                    <div class="note-bubble-wrap">
+                        <div class="note-bubble" id="user-intent-bubble" style="display:none; background: var(--accent); color: var(--navy);"></div>
+                    </div>
+                    <div class="note-ring you">
+                        <div class="note-inner">📍</div>
+                    </div>
+                    <div class="note-name">You<br><span style="font-size:8px; color:var(--muted)">Tap to set</span></div>
+                </div>
+            </div>
+            <div class="note-item">
+                <div style="display:flex;flex-direction:column;align-items:center;gap:3px;">
+                    <div class="note-bubble-wrap">
+                        <div class="note-bubble">Anyone wanna go labs tonight?</div>
+                    </div>
+                    <div class="note-ring">
+                        <div class="note-inner">👤</div>
+                    </div>
+                    <div class="note-name">@brestinou</div>
+                    <div class="note-spotify">🎵 skibidi toilet</div>
+                </div>
+            </div>
+            <div class="note-item">
+                <div style="display:flex;flex-direction:column;align-items:center;gap:3px;">
+                    <div class="note-bubble-wrap">
+                        <div class="note-bubble" style="background:#1E3A8A;">Library grind 😭</div>
+                    </div>
+                    <div class="note-ring" style="background:linear-gradient(135deg,#3B82F6,#818CF8)">
+                        <div class="note-inner" style="background:#1E3A8A;">📚</div>
+                    </div>
+                    <div class="note-name">Sarah</div>
+                </div>
+            </div>
+            <div class="note-item">
+                <div style="display:flex;flex-direction:column;align-items:center;gap:3px;">
+                    <div class="note-bubble-wrap">
+                        <div class="note-bubble" style="background:#7C3AED;">Pre-drinks at mine 🍾</div>
+                    </div>
+                    <div class="note-ring" style="background:linear-gradient(135deg,#7C3AED,#EC4899)">
+                        <div class="note-inner" style="background:#4C1D95;">🪆</div>
+                    </div>
+                    <div class="note-name">Ivan</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section-header">
+            <h2>Messages</h2>
+        </div>
+
+        <ul class="chat-list" id="main-messages-list">
+            <li class="chat-item" onclick="openChatView('Alex Mercer', '👨‍🎓', 'background:#EFF6FF;border-color:#BFDBFE;')">
+                <div class="avatar" style="background:#EFF6FF;border-color:#BFDBFE;">👨‍🎓</div>
+                <div class="chat-info">
+                    <p class="chat-name">Alex Mercer</p>
+                    <p class="chat-preview">Perfect. I'll be there with 2 others...</p>
+                </div>
+                <span class="chat-time">now</span>
+            </li>
+            <li class="chat-item" onclick="openChatView('RSS · Russian Speaking Society', '🪆', 'background:#FEF3C7;border-color:#FDE68A;')">
+                <div class="avatar" style="background:#FEF3C7;border-color:#FDE68A;">🪆</div>
+                <div class="chat-info">
+                    <p class="chat-name">RSS · Russian Speaking Society</p>
+                    <p class="chat-preview">Ivan: pre-drinks at mine?</p>
+                </div>
+                <span class="chat-time">5m</span>
+            </li>
+            <li class="chat-item" onclick="openChatView('@brestinou', '👤', '')">
+                <div class="avatar">👤</div>
+                <div class="chat-info">
+                    <p class="chat-name">@brestinou</p>
+                    <p class="chat-preview">Yeah I crossed paths with you at the library!</p>
+                </div>
+                <span class="chat-time">12m</span>
+            </li>
+            <li class="chat-item" onclick="openChatView('Sarah M.', '📚', 'background:#DCFCE7;border-color:#BBF7D0;')">
+                <div class="avatar" style="background:#DCFCE7;border-color:#BBF7D0;">📚</div>
+                <div class="chat-info">
+                    <p class="chat-name">Sarah M.</p>
+                    <p class="chat-preview">Are you heading to the library later?</p>
+                </div>
+                <span class="chat-time">1h</span>
+            </li>
+        </ul>
+    </div>
+
+    <div id="screen-chat-active" class="screen">
+        <div class="chat-header">
+            <button class="back-btn" onclick="closeChatView()">←</button>
+            <h2 id="active-chat-name" style="margin:0; font-size: 16px;">Chat Name</h2>
+        </div>
+        <div class="chat-messages" id="chat-messages-container">
+            </div>
+        <div class="chat-input-area">
+            <input type="text" id="chat-input-field" class="chat-input" placeholder="Message..." onkeypress="handleChatKeyPress(event)">
+            <button class="send-btn" onclick="sendMessage()">↑</button>
+        </div>
+    </div>
+
+    <div id="screen-search" class="screen">
+        <div class="section-header"><h2>People Finder</h2></div>
+        <div class="search-wrapper">
+            <div class="search-input-wrap">
+                <span>🔍</span>
+                <input class="search-input" id="searchInput" placeholder="Search by name, course, interest…" oninput="runSearch()">
+            </div>
+            <div class="chip-row" id="chipRow">
+                <div class="chip active" onclick="setFilter(this,'All')">All</div>
+                <div class="chip" onclick="setFilter(this,'Engineering')">Engineering</div>
+                <div class="chip" onclick="setFilter(this,'Economics')">Economics</div>
+                <div class="chip" onclick="setFilter(this,'Tennis')">Tennis</div>
+            </div>
+        </div>
+        <ul class="chat-list" id="peopleList">
+            <li class="chat-item search-row" data-tags="engineering tennis" data-bridged="true"
+                onclick="openModal('Alex Mercer','👨‍🎓','Mechanical Engineering','Tennis, Formula Student','Today 2:30 PM','📍 Crossed paths at Library', true)">
+                <div class="avatar" style="background:#EFF6FF;border-color:#BFDBFE;">👨‍🎓</div>
+                <div class="chat-info">
+                    <p class="chat-name">Alex Mercer</p>
+                    <div class="person-meta">
+                        <span class="person-tag">Mechanical Engineering</span>
+                        <div class="person-dot"></div>
+                        <span class="person-tag">Tennis</span>
+                    </div>
+                </div>
+                <span class="cp-badge">Crossed paths</span>
+            </li>
+            <li class="chat-item search-row" data-tags="economics" data-bridged="true"
+                onclick="openModal('Chloe Davies','👩‍🎓','Economics Year 1','Bath Entrepreneurs, Finance','Yesterday','🔍 Bridged via Search', true)">
+                <div class="avatar" style="background:#FFF7ED;border-color:#FED7AA;">👩‍🎓</div>
+                <div class="chat-info">
+                    <p class="chat-name">Chloe Davies</p>
+                    <div class="person-meta">
+                        <span class="person-tag">Economics</span>
+                        <div class="person-dot"></div>
+                        <span class="person-tag">Bath Entrepreneurs</span>
+                    </div>
+                </div>
+            </li>
+            <li class="chat-item search-row" data-tags="engineering" data-bridged="true"
+                onclick="openModal('Sam Smith','👨‍💻','Software Engineering','Anime Society, Coding','Last week','🔍 Bridged via Search', true)">
+                <div class="avatar" style="background:#F0FDF4;border-color:#BBF7D0;">👨‍💻</div>
+                <div class="chat-info">
+                    <p class="chat-name">Sam Smith</p>
+                    <div class="person-meta">
+                        <span class="person-tag">Software Engineering</span>
+                        <div class="person-dot"></div>
+                        <span class="person-tag">Anime Society</span>
+                    </div>
+                </div>
+            </li>
+            <li class="chat-item search-row" data-tags="tennis" data-bridged="true"
+                onclick="openModal('Jessica Alba','🎾','Sports Science','Tennis, Athletics','Oct 12th','📍 Crossed paths at Sports Village', true)">
+                <div class="avatar" style="background:#FFF1F2;border-color:#FECDD3;">🎾</div>
+                <div class="chat-info">
+                    <p class="chat-name">Jessica Alba</p>
+                    <div class="person-meta">
+                        <span class="person-tag">Sports Science</span>
+                        <div class="person-dot"></div>
+                        <span class="person-tag">Tennis</span>
+                    </div>
+                </div>
+                <span class="cp-badge">Crossed paths</span>
+            </li>
+            
+            <li class="chat-item search-row" data-tags="engineering" data-bridged="false"
+                onclick="openModal('Liam Chen','🧑‍🔬','Civil Engineering','Engineering, Chess','-','🔍 Search', false)">
+                <div class="avatar" style="background:#F3E8FF;border-color:#D8B4FE;">🧑‍🔬</div>
+                <div class="chat-info">
+                    <p class="chat-name">Liam Chen</p>
+                    <div class="person-meta">
+                        <span class="person-tag">Civil Engineering</span>
+                        <div class="person-dot"></div>
+                        <span class="person-tag">Chess</span>
+                    </div>
+                </div>
+            </li>
+            <li class="chat-item search-row" data-tags="economics tennis" data-bridged="false"
+                onclick="openModal('Zoe Martinez','🙋‍♀️','Economics Year 2','Tennis, Reading','-','🔍 Search', false)">
+                <div class="avatar" style="background:#FFE4E6;border-color:#FDA4AF;">🙋‍♀️</div>
+                <div class="chat-info">
+                    <p class="chat-name">Zoe Martinez</p>
+                    <div class="person-meta">
+                        <span class="person-tag">Economics</span>
+                        <div class="person-dot"></div>
+                        <span class="person-tag">Tennis</span>
+                    </div>
+                </div>
+            </li>
+        </ul>
+    </div>
+
+    <div id="screen-profile" class="screen">
+        <div class="profile-hero">
+            <div class="profile-avatar-wrap">ME</div>
+            <p class="profile-name">You</p>
+            <p class="profile-sub">University of Bath · Year 1</p>
+            <div class="profile-badges">
+                <span class="badge">✓ Verified</span>
+                <span class="badge">🏛️ Campus Architect</span>
+            </div>
+        </div>
+
+        <div class="barcode-card" onclick="this.classList.toggle('open')">
+            <div class="barcode-header">
+                <span class="barcode-label">Bridge Barcode</span>
+                <span class="barcode-chevron">▼</span>
+            </div>
+            <div class="barcode-pts">885</div>
+            <div class="barcode-value">≈ £8.85 redeemable value · Tap to expand</div>
+            <div class="barcode-body">
+                <hr class="barcode-divider">
+                <div class="barcode-row"><span>📍 Attended Labyrinth Monday</span><span class="pts">+80</span></div>
+                <div class="barcode-row"><span>🤝 Crossed paths: Alex Mercer</span><span class="pts">+5</span></div>
+                <div class="barcode-row"><span>📍 Attended SU Pre-Drinks</span><span class="pts">+80</span></div>
+            </div>
+        </div>
+
+        <div class="settings-list">
+            <div class="settings-item" onclick="triggerEditProfile()"><span class="settings-icon">✏️</span> Edit Profile <span class="chevron">›</span></div>
+            <div class="settings-item"><span class="settings-icon">⚙️</span> Settings <span class="chevron">›</span></div>
+            <div class="settings-item danger" onclick="triggerReport()"><span class="settings-icon">🛡️</span> Safety & Reporting <span class="chevron">›</span></div>
+        </div>
+    </div>
+
+    <div id="modal" class="modal-overlay" onclick="handleModalClick(event)">
+        <div class="modal-sheet" onclick="event.stopPropagation()">
+            <div class="modal-handle"></div>
+            <div class="modal-close-btn" onclick="closeModal()">✕</div>
+            <div class="modal-avatar-row">
+                <div class="modal-avatar" id="m-avatar">👤</div>
+                <p class="modal-name" id="m-name">Name</p>
+                <p class="modal-course" id="m-course">Course</p>
+            </div>
+            <div class="modal-rows">
+                <div class="modal-row"><span class="modal-key">Interests</span><span class="modal-val" id="m-interests">-</span></div>
+                <div class="modal-row"><span class="modal-key">Connected</span><span class="modal-val" id="m-date">-</span></div>
+                <div class="modal-row"><span class="modal-key">How we met</span><span class="modal-val" id="m-method">-</span></div>
+            </div>
+            <button id="modal-action-btn" class="modal-cta">💬 Message</button>
+        </div>
+    </div>
+
+    <nav class="bottom-nav">
+        <div class="nav-btn active" onclick="switchTo('map',this)">
+            <span class="nav-icon">📍</span>
+            <div class="nav-dot"></div>
+        </div>
+        <div class="nav-btn" onclick="switchTo('messages',this)">
+            <span class="nav-icon">💬</span>
+            <div class="nav-dot"></div>
+        </div>
+        <div class="nav-btn" onclick="switchTo('search',this)">
+            <span class="nav-icon">🔍</span>
+            <div class="nav-dot"></div>
+        </div>
+        <div class="nav-btn" onclick="switchTo('profile',this)">
+            <span class="nav-icon">👤</span>
+            <div class="nav-dot"></div>
+        </div>
+    </nav>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+// ── Global States for Persistence ────────────────────────────
+const pendingUsers = new Set();
+const goingEvents = new Set();
+let currentActiveChat = null;
+let activeChatAvatar = '👤';
+let activeChatAvatarStyle = '';
+
+// Store message histories per person/society
+const chatHistories = {
+    'Alex Mercer': [
+        { type: 'received', text: 'Hey! Are you heading out tonight?' },
+        { type: 'sent', text: "Yeah, I saw your intent note. Let's link up at the SU bar first." },
+        { type: 'received', text: "Perfect. I'll be there with 2 others. Look for the society shirts!" }
+    ],
+    'RSS · Russian Speaking Society': [
+        { type: 'received', text: 'Ivan: pre-drinks at mine?' }
+    ],
+    '@brestinou': [
+        { type: 'received', text: 'Yeah I crossed paths with you at the library!' }
+    ],
+    'Sarah M.': [
+        { type: 'received', text: 'Are you heading to the library later?' }
+    ]
+};
+
+// ── Navigation ──────────────────────────────────────────────
+function switchTo(id, btn) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('screen-' + id).classList.add('active');
+    btn.classList.add('active');
+    if (id === 'map') setTimeout(() => map.invalidateSize(), 80);
+}
+
+// ── Interactive Features ─────────────────────────────────────
+function setIntentNote() {
+    let note = prompt("What's your intent for the next 12 hours?\n(e.g., 'Heading to the library, need a buddy!')");
+    if(note) {
+        let bubble = document.getElementById('user-intent-bubble');
+        bubble.innerText = note;
+        bubble.style.display = 'block';
+    }
+}
+
+// Open specific chat conversation
+function openChatView(name, avatar = '👤', avatarStyle = '') {
+    currentActiveChat = name;
+    activeChatAvatar = avatar;
+    activeChatAvatarStyle = avatarStyle;
+
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById('screen-chat-active').classList.add('active');
+    document.getElementById('active-chat-name').innerText = name;
+    
+    // Sync bottom nav to messages tab (index 1)
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.nav-btn')[1].classList.add('active');
+    
+    renderMessages();
+}
+
+// Render messages for current open chat
+function renderMessages() {
+    const container = document.getElementById('chat-messages-container');
+    container.innerHTML = '';
+    const history = chatHistories[currentActiveChat] || [];
+    
+    history.forEach(msg => {
+        const div = document.createElement('div');
+        div.className = `msg-bubble msg-${msg.type}`;
+        div.innerText = msg.text;
+        container.appendChild(div);
+    });
+    
+    // Scroll to bottom
+    container.scrollTop = container.scrollHeight;
+}
+
+// Listen for enter key on input
+function handleChatKeyPress(e) {
+    if (e.key === 'Enter') {
+        sendMessage();
+    }
+}
+
+// Send message logic and dynamically update list at the top
+function sendMessage() {
+    const input = document.getElementById('chat-input-field');
+    const text = input.value.trim();
+    if (!text) return;
+
+    if (!chatHistories[currentActiveChat]) {
+        chatHistories[currentActiveChat] = [];
+    }
+    
+    chatHistories[currentActiveChat].push({ type: 'sent', text: text });
+    input.value = '';
+    renderMessages();
+    
+    // Update preview in the main messages list & move to top
+    updateMainChatList(currentActiveChat, text);
+}
+
+function updateMainChatList(name, text) {
+    const list = document.getElementById('main-messages-list');
+    let items = Array.from(list.querySelectorAll('.chat-item'));
+    let existingItem = items.find(item => item.querySelector('.chat-name').innerText === name);
+
+    if (existingItem) {
+        existingItem.querySelector('.chat-preview').innerText = "You: " + text;
+        existingItem.querySelector('.chat-time').innerText = "now";
+        list.prepend(existingItem); // Move to top of the list
+    } else {
+        // Create new item if it doesn't exist yet
+        let li = document.createElement('li');
+        li.className = 'chat-item';
+        
+        // Save the current scope parameters properly
+        let avatarToSave = activeChatAvatar;
+        let styleToSave = activeChatAvatarStyle;
+        
+        li.onclick = () => openChatView(name, avatarToSave, styleToSave);
+        
+        li.innerHTML = `
+            <div class="avatar" style="${activeChatAvatarStyle}">${activeChatAvatar}</div>
+            <div class="chat-info">
+                <p class="chat-name">${name}</p>
+                <p class="chat-preview">You: ${text}</p>
+            </div>
+            <span class="chat-time">now</span>
+        `;
+        list.prepend(li);
+    }
+}
+
+// Back button in active chat
+function closeChatView() {
+    document.getElementById('screen-chat-active').classList.remove('active');
+    document.getElementById('screen-messages').classList.add('active');
+}
+
+function triggerReport() {
+    alert("Safety & Reporting\n\nBridge operates a zero-tolerance/one-strike policy. Reports are monitored and reviewed by admins to ensure a high-trust campus environment.");
+}
+
+function triggerEditProfile() {
+    alert("Edit Profile\n\nHere you would add your Spotify integration, edit your course details, and manage your visibility preferences.");
+}
+
+// Persistent "I'm Going" functionality
+function toggleGoing(btn, eventId) {
+    if (goingEvents.has(eventId)) {
+        goingEvents.delete(eventId);
+        btn.classList.remove('going');
+        btn.textContent = "I'm going!";
+    } else {
+        goingEvents.add(eventId);
+        btn.classList.add('going');
+        btn.textContent = "✓ You're going!";
+        alert("You've registered for this event! If you attend and verify your location, you'll earn Bridge Barcode points.");
+    }
+}
+
+
+// ── Location Toggle ──────────────────────────────────────────
+let locOn = true;
+function toggleLoc() {
+    locOn = !locOn;
+    const track = document.getElementById('loc-track');
+    const label = document.getElementById('loc-label');
+    track.classList.toggle('off', !locOn);
+    label.textContent = locOn ? 'Location On' : 'Location Off';
+    if (locOn) { userMarker.addTo(map); }
+    else { map.removeLayer(userMarker); }
+}
+
+// ── Search / Filter ──────────────────────────────────────────
+let activeFilter = 'all';
+function setFilter(el, word) {
+    document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+    el.classList.add('active');
+    activeFilter = word.toLowerCase();
+    runSearch();
+}
+function runSearch() {
+    const q = document.getElementById('searchInput').value.toLowerCase();
+    const list = document.getElementById('peopleList');
+    const items = Array.from(list.querySelectorAll('.search-row'));
+
+    items.forEach(row => {
+        const text = row.innerText.toLowerCase();
+        const tags = row.dataset.tags.toLowerCase();
+        const match = (text.includes(q) && (activeFilter === 'all' || tags.includes(activeFilter)));
+        row.style.display = match ? '' : 'none';
+    });
+    
+    // Sort logic: 'Bridged' items (true) should appear above 'Unbridged' items (false)
+    items.sort((a, b) => {
+        const aBridged = a.dataset.bridged === 'true' ? 1 : 0;
+        const bBridged = b.dataset.bridged === 'true' ? 1 : 0;
+        return bBridged - aBridged;
+    });
+    
+    // Re-append to DOM in new sorted order
+    items.forEach(item => list.appendChild(item));
+}
+
+// Initial sorting on load
+runSearch();
+
+// ── Modal & Persistent Pending State ──────────────────────────
+function openModal(name, avatar, course, interests, date, method, isBridgedHtml) {
+    document.getElementById('m-name').textContent = name;
+    document.getElementById('m-avatar').textContent = avatar;
+    
+    // Extract background inline-style for modal display
+    const triggerEl = event.currentTarget;
+    const avatarEl = triggerEl ? triggerEl.querySelector('.avatar') : null;
+    let avatarStyle = avatarEl ? avatarEl.style.cssText : '';
+    document.getElementById('m-avatar').style.cssText = avatarStyle;
+    
+    document.getElementById('m-course').textContent = course;
+    document.getElementById('m-interests').textContent = interests;
+    document.getElementById('m-date').textContent = date;
+    document.getElementById('m-method').textContent = method;
+    
+    const btn = document.getElementById('modal-action-btn');
+    
+    if (isBridgedHtml) {
+        btn.className = 'modal-cta';
+        btn.innerText = '💬 Message';
+        btn.onclick = () => {
+            openChatView(name, avatar, avatarStyle);
+            closeModal();
+        };
+    } else if (pendingUsers.has(name)) {
+        btn.className = 'modal-cta pending';
+        btn.innerText = '⏳ Pending';
+        btn.onclick = null;
+    } else {
+        btn.className = 'modal-cta bridge-btn';
+        btn.innerText = '➕ Bridge';
+        btn.onclick = () => {
+            pendingUsers.add(name);
+            btn.innerText = '⏳ Pending';
+            btn.classList.add('pending');
+            btn.onclick = null; // disable further clicks
+        };
+    }
+
+    document.getElementById('modal').classList.add('active');
+}
+function closeModal() { document.getElementById('modal').classList.remove('active'); }
+function handleModalClick(e) { if (e.target === document.getElementById('modal')) closeModal(); }
+
+// ── Map ───────────────────────────────────────────────────────
+const map = L.map('screen-map', {
+    zoomControl: false,
+    attributionControl: false,
+    zoomAnimation: true
+}).setView([51.3800, -2.3530], 15);
+
+L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+    maxZoom: 19
+}).addTo(map);
+
+// ── Heatmaps as geo-circles (auto-scale with zoom) ──────────
+const hotspots = [
+    { lat: 51.3800, lng: -2.3585, radii: [60, 130, 220], color: '#FF4444' },  // Labyrinth
+    { lat: 51.3795, lng: -2.3255, radii: [50, 110, 190], color: '#4444FF' },  // Library
+    { lat: 51.3820, lng: -2.3580, radii: [35, 80, 140],  color: '#FF8844' },  // Abbey
+    { lat: 51.3785, lng: -2.3270, radii: [30, 70, 130],  color: '#4499FF' },  // Sports Village
+    { lat: 51.3835, lng: -2.3615, radii: [25, 60, 110],  color: '#FF9933' },  // George St
+    { lat: 51.3815, lng: -2.3650, radii: [20, 50, 95],   color: '#FF5533' },  // Quays
+];
+
+const opacities = [0.38, 0.18, 0.07];
+
+hotspots.forEach(h => {
+    h.radii.forEach((r, i) => {
+        L.circle([h.lat, h.lng], {
+            radius: r,
+            color: 'transparent',
+            fillColor: h.color,
+            fillOpacity: opacities[i],
+            interactive: false
+        }).addTo(map);
+    });
+});
+
+// ── Event Pins ───────────────────────────────────────────────
+function makePin(icon, label) {
+    return L.divIcon({
+        className: '',
+        html: `<div class="map-pin"><div class="pin-body"><span class="pin-emoji">${icon}</span></div><div class="pin-label">${label}</div></div>`,
+        iconSize: [0, 0]
+    });
+}
+
+function makePopup(tag, title, sub, count, friendsCount, eventId) {
+    let isGoing = goingEvents.has(eventId);
+    let btnClass = isGoing ? 'popup-btn going' : 'popup-btn';
+    let btnText = isGoing ? "✓ You're going!" : "I'm going!";
+    
+    return `
+        <div class="popup-tag">● ${tag}</div>
+        <p class="popup-title">${title}</p>
+        <p class="popup-sub">${sub}</p>
+        <p class="popup-count">
+            <span>${count}</span>
+            <span class="popup-friends">${friendsCount} friends going</span>
+        </p>
+        <button class="${btnClass}" onclick="toggleGoing(this, '${eventId}')">${btnText}</button>
+    `;
+}
+
+L.marker([51.3800, -2.3585], { icon: makePin('🎉','Labyrinth') }).addTo(map)
+    .bindPopup(makePopup('Hosted by SU', 'Labyrinth Bath', 'Skint Monday · 11pm', '150+ people going', '5', 'event-labyrinth'), { className: '', closeButton: false, offset: [0,-36] });
+
+L.marker([51.3795, -2.3255], { icon: makePin('📚','Library') }).addTo(map)
+    .bindPopup(makePopup('Academic Reps', 'Campus Library', 'Late night study', '80+ students here', '2', 'event-library'), { className: '', closeButton: false, offset: [0,-36] });
+
+L.marker([51.3820, -2.3580], { icon: makePin('🏛️','Abbey') }).addTo(map)
+    .bindPopup(makePopup('History Soc', 'Abbey Meetup', 'City walking tour', '20+ going', '1', 'event-abbey'), { className: '', closeButton: false, offset: [0,-36] });
+
+// ── User Pin ─────────────────────────────────────────────────
+const userIcon = L.divIcon({
+    className: '',
+    html: `<div class="user-pin-wrap"><div class="user-pin-body"><span>📍</span></div><div class="user-pin-label">YOU</div></div>`,
+    iconSize: [0, 0]
+});
+const userMarker = L.marker([51.3780, -2.3520], { icon: userIcon }).addTo(map);
+</script>
+</body>
+</html>
