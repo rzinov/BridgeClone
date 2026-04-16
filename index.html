@@ -32,6 +32,9 @@
 
         *, *::before, *::after { box-sizing: border-box; }
 
+        ::-webkit-scrollbar { width: 0px; background: transparent; display: none; }
+        * { scrollbar-width: none; }
+
         body {
             margin: 0;
             background: #0e1420;
@@ -59,7 +62,7 @@
             outline: 1px solid rgba(255,255,255,0.04);
         }
 
-        /* ── Status Bar ── */
+        /* ── Status Bar & Top Bar ── */
         .status-bar {
             background: var(--navy);
             height: 14px;
@@ -71,9 +74,8 @@
             color: rgba(255,255,255,0.5);
             letter-spacing: 0.3px;
             flex-shrink: 0;
+            z-index: 9999;
         }
-
-        /* ── Top Bar ── */
         .top-bar {
             background: var(--navy);
             color: white;
@@ -85,756 +87,315 @@
             position: relative;
             z-index: 999;
         }
-        .top-bar::after {
-            content: '';
-            position: absolute;
-            bottom: 0; left: 0; right: 0;
-            height: 1px;
-            background: rgba(255,255,255,0.06);
-        }
-
-        .logo {
-            font-family: 'DM Serif Display', serif;
-            font-style: italic;
-            font-size: 22px;
-            letter-spacing: -0.5px;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            color: white;
-        }
-        .logo-icon {
-            width: 28px;
-            height: 28px;
-            background: var(--accent);
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-style: normal;
-            font-size: 14px;
-            flex-shrink: 0;
-        }
+        .top-bar::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 1px; background: rgba(255,255,255,0.06); }
+        .logo { font-family: 'DM Serif Display', serif; font-style: italic; font-size: 22px; letter-spacing: -0.5px; display: flex; align-items: center; gap: 6px; color: white; }
+        .logo-icon { width: 28px; height: 28px; background: var(--accent); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-style: normal; font-size: 14px; flex-shrink: 0; }
 
         /* ── Toggle ── */
         .toggle-pill {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            background: rgba(255,255,255,0.07);
-            border: 1px solid rgba(255,255,255,0.1);
-            padding: 5px 10px 5px 14px;
-            border-radius: var(--radius-pill);
-            cursor: pointer;
-            user-select: none;
-            transition: background 0.2s;
+            display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.1);
+            padding: 5px 10px 5px 14px; border-radius: var(--radius-pill); cursor: pointer; user-select: none; transition: background 0.2s;
         }
         .toggle-pill:hover { background: rgba(255,255,255,0.11); }
         .toggle-label { font-size: 12px; font-weight: 500; color: rgba(255,255,255,0.85); }
-        .toggle-track {
-            width: 38px; height: 21px;
-            background: var(--accent);
-            border-radius: 100px;
-            position: relative;
-            transition: background 0.25s;
-            flex-shrink: 0;
-        }
+        .toggle-track { width: 38px; height: 21px; background: var(--accent); border-radius: 100px; position: relative; transition: background 0.25s; flex-shrink: 0; }
         .toggle-track.off { background: rgba(255,255,255,0.2); }
-        .toggle-thumb {
-            width: 17px; height: 17px;
-            background: white;
-            border-radius: 50%;
-            position: absolute;
-            top: 2px; right: 2px;
-            transition: transform 0.25s cubic-bezier(.4,0,.2,1);
-            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
-        }
+        .toggle-thumb { width: 17px; height: 17px; background: white; border-radius: 50%; position: absolute; top: 2px; right: 2px; transition: transform 0.25s cubic-bezier(.4,0,.2,1); box-shadow: 0 1px 3px rgba(0,0,0,0.3); }
         .toggle-track.off .toggle-thumb { transform: translateX(-17px); }
 
-        /* ── Screens ── */
-        .screen {
-            flex: 1;
-            overflow-y: auto;
-            display: none;
-            background: var(--light);
-            position: relative;
-        }
+        /* ── Screens & Animations ── */
+        .screen { flex: 1; overflow-y: auto; display: none; background: var(--light); position: relative; animation: fadeInScreen 0.3s ease; }
         .screen.active { display: flex; flex-direction: column; }
-        #screen-map {
-            display: none;
-            height: 100%;
-            width: 100%;
+        @keyframes fadeInScreen { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .sub-screen {
+            position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            background: var(--light); z-index: 1000;
+            transform: translateX(100%); transition: transform 0.3s cubic-bezier(.4,0,.2,1);
+            display: flex; flex-direction: column;
         }
-        #screen-map.active { display: block; }
-        #screen-map .leaflet-container { background: #e8e0d8; }
+        .sub-screen.active { transform: translateX(0); }
+        
+        /* ── Login Overlay ── */
+        #screen-login {
+            position: absolute; inset: 0; z-index: 9998;
+            background: linear-gradient(145deg, var(--navy), var(--navy-mid));
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            padding: 40px; transition: opacity 0.4s ease, transform 0.4s ease;
+        }
+        #screen-login.hidden { opacity: 0; pointer-events: none; transform: scale(1.02); }
+        
+        .login-logo {
+            font-family: 'DM Serif Display', serif; font-style: italic; font-size: 42px; color: white;
+            display: flex; flex-direction: column; align-items: center; gap: 16px; margin-bottom: 40px;
+            animation: floatLogo 3s ease-in-out infinite;
+        }
+        .login-logo-icon { width: 64px; height: 64px; background: var(--accent); border-radius: 16px; display: flex; align-items: center; justify-content: center; font-style: normal; font-size: 32px; box-shadow: 0 8px 24px rgba(74,222,128,0.3); }
+        @keyframes floatLogo { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
 
-        /* ── Bottom Nav ── */
-        .bottom-nav {
-            background: var(--navy);
-            height: 72px;
-            display: flex;
-            justify-content: space-around;
-            align-items: center;
-            flex-shrink: 0;
-            position: relative;
-            z-index: 999;
-            padding: 0 8px 8px;
-        }
-        .bottom-nav::before {
-            content: '';
-            position: absolute;
-            top: 0; left: 0; right: 0;
-            height: 1px;
-            background: rgba(255,255,255,0.07);
-        }
-        .nav-btn {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 3px;
-            cursor: pointer;
-            padding: 8px 20px 4px;
-            border-radius: var(--radius-sm);
-            transition: all 0.2s;
-            position: relative;
-        }
+        .login-card { background: var(--card); padding: 30px 24px; border-radius: 24px; width: 100%; box-shadow: var(--shadow-lg); display: flex; flex-direction: column; gap: 16px; animation: slideUpFade 0.6s cubic-bezier(.2, .8, .2, 1); }
+        @keyframes slideUpFade { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .login-input { width: 100%; padding: 14px 16px; border: 1.5px solid var(--border); border-radius: 12px; font-size: 15px; font-family: 'DM Sans', sans-serif; transition: border-color 0.2s, box-shadow 0.2s; outline: none; }
+        .login-input:focus { border-color: var(--accent); box-shadow: 0 0 0 4px rgba(74,222,128,0.1); }
+        .login-btn { background: var(--navy); color: white; border: none; padding: 16px; border-radius: 12px; font-family: 'DM Sans', sans-serif; font-size: 16px; font-weight: 700; cursor: pointer; transition: background 0.2s, transform 0.1s; display: flex; justify-content: center; align-items: center; gap: 8px; margin-top: 8px; }
+        .login-btn:hover { background: var(--navy-soft); }
+        .login-btn:active { transform: scale(0.98); }
+
+        /* ── Map Elements ── */
+        #screen-map { display: none; height: 100%; width: 100%; }
+        #screen-map.active { display: block; }
+        #screen-map .leaflet-container { background: #e8e0d8; cursor: default; }
+        #screen-map.admin-mode .leaflet-container { cursor: crosshair !important; }
+
+        .bottom-nav { background: var(--navy); height: 72px; display: flex; justify-content: space-around; align-items: center; flex-shrink: 0; position: relative; z-index: 999; padding: 0 8px 8px; }
+        .bottom-nav::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px; background: rgba(255,255,255,0.07); }
+        .nav-btn { display: flex; flex-direction: column; align-items: center; gap: 3px; cursor: pointer; padding: 8px 20px 4px; border-radius: var(--radius-sm); transition: all 0.2s; position: relative; }
         .nav-btn:hover { background: rgba(255,255,255,0.05); }
-        .nav-btn .nav-icon {
-            font-size: 20px;
-            opacity: 0.35;
-            transition: all 0.2s;
-            filter: grayscale(1);
-        }
-        .nav-btn .nav-dot {
-            width: 3px; height: 3px;
-            border-radius: 50%;
-            background: transparent;
-            transition: background 0.2s;
-        }
+        .nav-btn .nav-icon { font-size: 20px; opacity: 0.35; transition: all 0.2s; filter: grayscale(1); }
+        .nav-btn .nav-dot { width: 3px; height: 3px; border-radius: 50%; background: transparent; transition: background 0.2s; }
         .nav-btn.active .nav-icon { opacity: 1; filter: none; }
         .nav-btn.active .nav-dot { background: var(--accent); }
 
-        /* ── Section Header ── */
-        .section-header {
-            padding: 18px 20px 12px;
-            background: var(--card);
-            border-bottom: 1px solid var(--border);
-        }
-        .section-header h2 {
-            margin: 0;
-            font-size: 18px;
-            font-weight: 600;
-            color: var(--text);
-        }
+        /* ── Shared UI Elements ── */
+        .section-header { padding: 18px 20px 12px; background: var(--card); border-bottom: 1px solid var(--border); }
+        .section-header h2 { margin: 0; font-size: 18px; font-weight: 600; color: var(--text); }
+        .sub-header { display: flex; align-items: center; padding: 16px 20px; background: var(--card); border-bottom: 1px solid var(--border); gap: 12px; z-index: 20; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+        .sub-header h2 { margin: 0; font-size: 16px; font-weight: 600; flex: 1; text-align: center; transform: translateX(-10px); }
+        .back-btn { background: none; border: none; font-size: 20px; color: var(--navy); cursor: pointer; padding: 0; display: flex; align-items: center; }
+        
+        .form-group { padding: 16px 20px; background: var(--card); border-bottom: 1px solid var(--border); }
+        .form-label { display: block; font-size: 12px; font-weight: 700; color: var(--muted); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .form-input { width: 100%; border: 1.5px solid var(--border); border-radius: var(--radius-sm); padding: 12px 14px; font-size: 14px; font-family: 'DM Sans', sans-serif; transition: border-color 0.2s; outline: none; }
+        .form-input:focus { border-color: var(--navy); }
+        
+        .btn-primary { background: var(--navy); color: white; border: none; padding: 14px; border-radius: var(--radius-sm); font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 600; width: calc(100% - 40px); margin: 20px; cursor: pointer; transition: background 0.2s; }
+        .btn-primary:active { transform: scale(0.98); }
 
-        /* ── Intent Notes (Stories row) ── */
-        .notes-row {
-            background: var(--card);
-            border-bottom: 1px solid var(--border);
-            padding: 24px 0 12px; /* Fixed clipping issue */
-            overflow-x: auto;
-            display: flex;
-            gap: 0;
-            scrollbar-width: none;
-        }
-        .notes-row::-webkit-scrollbar { display: none; }
-        .note-item {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 6px;
-            min-width: 76px;
-            padding: 0 8px;
-            cursor: pointer;
-            flex-shrink: 0;
-        }
-        .note-ring {
-            width: 54px; height: 54px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, var(--accent), #3B82F6);
-            padding: 2.5px;
-            position: relative;
-        }
+        /* ── Intent Notes ── */
+        .notes-row { background: var(--card); border-bottom: 1px solid var(--border); padding: 24px 0 12px; overflow-x: auto; display: flex; gap: 0; }
+        .note-item { display: flex; flex-direction: column; align-items: center; gap: 6px; min-width: 76px; padding: 0 8px; cursor: pointer; flex-shrink: 0; transition: transform 0.2s; }
+        .note-item:active { transform: scale(0.95); }
+        .note-ring { width: 54px; height: 54px; border-radius: 50%; background: linear-gradient(135deg, var(--accent), #3B82F6); padding: 2.5px; position: relative; }
         .note-ring.you { background: linear-gradient(135deg, var(--accent), #22d3ee); }
-        .note-ring.muted { background: var(--border); }
-        .note-inner {
-            width: 100%; height: 100%;
-            border-radius: 50%;
-            background: var(--navy);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 22px;
-            border: 2px solid var(--card);
-        }
-        .note-bubble-wrap {
-            position: relative;
-            margin-bottom: -6px;
-            height: 40px; /* Fixed clipping issue */
-            display: flex;
-            align-items: flex-end;
-        }
-        .note-bubble {
-            background: var(--navy);
-            color: white;
-            border-radius: 10px;
-            padding: 5px 8px;
-            font-size: 10px;
-            line-height: 1.3;
-            text-align: center;
-            max-width: 72px;
-            word-break: break-word;
-            box-shadow: var(--shadow-sm);
-            position: relative;
-        }
-        .note-bubble::after {
-            content: '';
-            position: absolute;
-            bottom: -5px;
-            left: 50%;
-            transform: translateX(-50%);
-            border: 3px solid transparent;
-            border-top-color: var(--navy);
-        }
-        .note-name {
-            font-size: 10px;
-            font-weight: 500;
-            color: var(--text);
-            text-align: center;
-            line-height: 1.2;
-        }
-        .note-spotify {
-            font-size: 9px;
-            color: #1DB954;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: 2px;
-        }
+        .note-inner { width: 100%; height: 100%; border-radius: 50%; background: var(--navy); display: flex; align-items: center; justify-content: center; font-size: 22px; border: 2px solid var(--card); }
+        .note-bubble-wrap { position: relative; margin-bottom: -6px; height: 40px; display: flex; align-items: flex-end; }
+        .note-bubble { background: var(--navy); color: white; border-radius: 10px; padding: 5px 8px; font-size: 10px; line-height: 1.3; text-align: center; max-width: 72px; word-break: break-word; box-shadow: var(--shadow-sm); position: relative; }
+        .note-bubble::after { content: ''; position: absolute; bottom: -5px; left: 50%; transform: translateX(-50%); border: 3px solid transparent; border-top-color: var(--navy); }
+        .note-name { font-size: 10px; font-weight: 500; color: var(--text); text-align: center; line-height: 1.2; }
+        .note-spotify { font-size: 9px; color: #1DB954; font-weight: 600; display: flex; align-items: center; gap: 2px; background: rgba(29, 185, 84, 0.1); padding: 2px 6px; border-radius: 10px; margin-top: 2px; }
 
         /* ── Chat List ── */
         .chat-list { list-style: none; margin: 0; padding: 0; flex: 1; overflow-y: auto;}
-        .chat-item {
-            display: flex;
-            align-items: center;
-            gap: 14px;
-            padding: 14px 20px;
-            background: var(--card);
-            border-bottom: 1px solid var(--border);
-            cursor: pointer;
-            transition: background 0.15s;
-        }
+        .chat-item { display: flex; align-items: center; gap: 14px; padding: 14px 20px; background: var(--card); border-bottom: 1px solid var(--border); cursor: pointer; transition: background 0.15s, opacity 0.3s ease; }
         .chat-item:hover { background: #f3f5fb; }
         .chat-item:active { background: var(--border); }
-        .avatar {
-            width: 46px; height: 46px;
-            border-radius: 50%;
-            background: var(--light);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 22px;
-            flex-shrink: 0;
-            border: 1px solid var(--border);
-        }
+        .avatar { width: 46px; height: 46px; border-radius: 50%; background: var(--light); display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; border: 1px solid var(--border); }
         .chat-info { flex: 1; min-width: 0; }
-        .chat-name { font-size: 14px; font-weight: 600; color: var(--text); margin: 0 0 3px; }
+        .chat-name { font-size: 14px; font-weight: 600; color: var(--text); margin: 0 0 3px; display: flex; align-items: center; }
         .chat-preview { font-size: 12px; color: var(--muted); margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .chat-time { font-size: 11px; color: var(--muted); flex-shrink: 0; }
+        .chat-item.pinned { background: #FAFAFA; border-left: 4px solid var(--accent); }
 
         /* ── Active Chat Screen ── */
-        .chat-header {
-            display: flex;
-            align-items: center;
-            padding: 16px 20px;
-            background: var(--card);
-            border-bottom: 1px solid var(--border);
-            gap: 12px;
-        }
-        .back-btn {
-            background: none;
-            border: none;
-            font-size: 20px;
-            color: var(--navy);
-            cursor: pointer;
-            padding: 0;
-        }
-        .chat-messages {
-            flex: 1;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            overflow-y: auto;
-            background: var(--light);
-        }
-        .msg-bubble {
-            max-width: 75%;
-            padding: 10px 14px;
-            border-radius: 18px;
-            font-size: 14px;
-            line-height: 1.4;
-        }
-        .msg-received {
-            background: var(--card);
-            color: var(--text);
-            border: 1px solid var(--border);
-            align-self: flex-start;
-            border-bottom-left-radius: 4px;
-        }
-        .msg-sent {
-            background: var(--navy);
-            color: white;
-            align-self: flex-end;
-            border-bottom-right-radius: 4px;
-        }
-        .chat-input-area {
-            padding: 14px 20px;
-            background: var(--card);
-            border-top: 1px solid var(--border);
-            display: flex;
-            gap: 10px;
-        }
-        .chat-input {
-            flex: 1;
-            background: var(--light);
-            border: 1px solid var(--border);
-            border-radius: var(--radius-pill);
-            padding: 10px 16px;
-            font-size: 14px;
-            outline: none;
-        }
-        .send-btn {
-            background: var(--accent);
-            color: var(--navy);
-            border: none;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            font-size: 16px;
-        }
+        .chat-context-banner { background: var(--accent-dim); color: #16a34a; font-size: 11px; font-weight: 600; text-align: center; padding: 6px; border-bottom: 1px solid rgba(74,222,128,0.25); display: none; }
+        .chat-messages { flex: 1; padding: 20px; display: flex; flex-direction: column; gap: 12px; overflow-y: auto; background: var(--light); }
+        .msg-bubble { max-width: 75%; padding: 10px 14px; border-radius: 18px; font-size: 14px; line-height: 1.4; animation: fadeIn 0.2s ease-out; position: relative; user-select: none; -webkit-user-select: none; }
+        .msg-received { background: var(--card); color: var(--text); border: 1px solid var(--border); align-self: flex-start; border-bottom-left-radius: 4px; }
+        .msg-sent { background: var(--navy); color: white; align-self: flex-end; border-bottom-right-radius: 4px; }
+        .chat-input-area { padding: 14px 20px; background: var(--card); border-top: 1px solid var(--border); display: flex; gap: 10px; z-index: 10; }
+        .chat-input { flex: 1; background: var(--light); border: 1px solid var(--border); border-radius: var(--radius-pill); padding: 10px 16px; font-size: 14px; outline: none; transition: border-color 0.2s; }
+        .chat-input:focus { border-color: var(--accent); }
+        .send-btn { background: var(--accent); color: var(--navy); border: none; border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 16px; transition: transform 0.1s; }
+        .send-btn:active { transform: scale(0.9); }
 
-        /* ── Search ── */
-        .search-wrapper {
-            padding: 14px 20px 10px;
-            background: var(--card);
-            border-bottom: 1px solid var(--border);
-        }
-        .search-input-wrap {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            background: var(--light);
-            border: 1.5px solid var(--border);
-            border-radius: var(--radius-sm);
-            padding: 10px 14px;
-            transition: border-color 0.2s;
-        }
-        .search-input-wrap:focus-within { border-color: var(--navy); }
-        .search-input-wrap span { font-size: 16px; opacity: 0.5; }
-        .search-input {
-            border: none;
-            background: none;
-            flex: 1;
-            font-size: 14px;
-            font-family: 'DM Sans', sans-serif;
-            color: var(--text);
-            outline: none;
-        }
-        .search-input::placeholder { color: var(--muted); }
-        .chip-row {
-            display: flex;
-            gap: 7px;
-            margin-top: 10px;
-            overflow-x: auto;
-            scrollbar-width: none;
-            padding-bottom: 2px;
-        }
-        .chip-row::-webkit-scrollbar { display: none; }
-        .chip {
-            background: var(--light);
-            border: 1.5px solid var(--border);
-            color: var(--muted);
-            padding: 5px 13px;
-            border-radius: var(--radius-pill);
-            font-size: 12px;
-            font-weight: 500;
-            white-space: nowrap;
-            cursor: pointer;
-            transition: all 0.15s;
-        }
-        .chip:hover { border-color: var(--navy); color: var(--navy); }
-        .chip.active { background: var(--navy); border-color: var(--navy); color: white; }
-
-        /* ── Profile ── */
-        .profile-hero {
-            background: linear-gradient(160deg, var(--navy) 0%, var(--navy-mid) 100%);
-            padding: 28px 24px 24px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 8px;
-        }
-        .profile-avatar-wrap {
-            width: 80px; height: 80px;
-            border-radius: 50%;
-            background: var(--navy-soft);
-            border: 3px solid rgba(74,222,128,0.4);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 28px;
-            font-weight: 700;
-            color: white;
-            margin-bottom: 4px;
-        }
+        /* ── Profile & Inline Barcode ── */
+        .profile-hero { background: linear-gradient(160deg, var(--navy) 0%, var(--navy-mid) 100%); padding: 28px 24px 24px; display: flex; flex-direction: column; align-items: center; gap: 8px; flex-shrink: 0; }
+        .profile-avatar-wrap { width: 80px; height: 80px; border-radius: 50%; background: var(--navy-soft); border: 3px solid rgba(74,222,128,0.4); display: flex; align-items: center; justify-content: center; font-size: 28px; font-weight: 700; color: white; margin-bottom: 4px; }
         .profile-name { font-size: 20px; font-weight: 700; color: white; margin: 0; }
         .profile-sub { font-size: 13px; color: rgba(255,255,255,0.5); margin: 0; }
-        .profile-badges {
-            display: flex;
-            gap: 6px;
-            margin-top: 4px;
-        }
-        .badge {
-            background: rgba(74,222,128,0.15);
-            border: 1px solid rgba(74,222,128,0.3);
-            color: var(--accent);
-            font-size: 11px;
-            font-weight: 600;
-            padding: 3px 10px;
-            border-radius: var(--radius-pill);
-        }
-
-        /* ── Barcode Card ── */
-        .barcode-card {
-            margin: 16px;
-            border-radius: var(--radius);
+        .profile-badges { display: flex; gap: 6px; margin-top: 4px; }
+        .badge { background: rgba(74,222,128,0.15); border: 1px solid rgba(74,222,128,0.3); color: var(--accent); font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: var(--radius-pill); }
+        
+        .barcode-card { 
+            margin: 16px; border-radius: 18px; 
             background: linear-gradient(135deg, #1E3A8A 0%, #2563EB 50%, #3B82F6 100%);
-            padding: 20px;
-            cursor: pointer;
-            transition: transform 0.2s, box-shadow 0.2s;
-            box-shadow: 0 8px 24px rgba(37,99,235,0.35);
+            padding: 24px; 
+            cursor: pointer; 
+            transition: transform 0.2s, box-shadow 0.2s, filter 0.2s; 
+            box-shadow: 0 8px 24px rgba(37,99,235,0.35); 
+            position: relative; 
             overflow: hidden;
-            position: relative;
+            user-select: none;
+            -webkit-user-select: none;
+            flex-shrink: 0;
         }
-        .barcode-card::before {
-            content: '';
-            position: absolute;
-            top: -40%;
-            right: -10%;
-            width: 200px;
-            height: 200px;
-            background: rgba(255,255,255,0.05);
-            border-radius: 50%;
-        }
-        .barcode-card:hover { transform: translateY(-1px); box-shadow: 0 12px 32px rgba(37,99,235,0.4); }
-        .barcode-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-        }
-        .barcode-label { font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.7); letter-spacing: 0.5px; text-transform: uppercase; }
-        .barcode-chevron { color: rgba(255,255,255,0.5); font-size: 14px; transition: transform 0.3s; }
-        .barcode-card.open .barcode-chevron { transform: rotate(180deg); }
-        .barcode-pts { font-size: 38px; font-weight: 700; color: white; margin: 6px 0 2px; line-height: 1; }
-        .barcode-value { font-size: 12px; color: rgba(255,255,255,0.6); }
-        .barcode-body {
-            max-height: 0;
-            overflow: hidden;
-            transition: max-height 0.35s cubic-bezier(.4,0,.2,1), opacity 0.3s;
-            opacity: 0;
-        }
-        .barcode-card.open .barcode-body { max-height: 140px; opacity: 1; margin-top: 16px; }
-        .barcode-divider { border: none; border-top: 1px solid rgba(255,255,255,0.15); margin-bottom: 12px; }
-        .barcode-row {
-            display: flex;
-            justify-content: space-between;
-            font-size: 12px;
-            margin-bottom: 6px;
-            color: rgba(255,255,255,0.75);
-        }
-        .barcode-row .pts { color: var(--accent); font-weight: 600; }
+        .barcode-card::before { content: ''; position: absolute; top: -40%; right: -10%; width: 200px; height: 200px; background: rgba(255,255,255,0.05); border-radius: 50%; pointer-events: none; }
+        .barcode-card:active { transform: scale(0.97); filter: brightness(0.95); }
+        .barcode-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 4px; }
+        .barcode-label { font-size: 12px; font-weight: 700; color: rgba(255,255,255,0.85); letter-spacing: 0.8px; text-transform: uppercase; }
+        .barcode-pts { font-size: 42px; font-weight: 700; color: white; margin: 0 0 2px; line-height: 1; text-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .barcode-value { font-size: 13px; color: rgba(255,255,255,0.75); margin-bottom: 16px; font-weight: 500; }
+        .css-barcode { width: 100%; height: 50px; background: repeating-linear-gradient(90deg, #fff, #fff 2px, transparent 2px, transparent 4px, #fff 4px, #fff 5px, transparent 5px, transparent 8px, #fff 8px, #fff 12px, transparent 12px, transparent 14px, #fff 14px, #fff 16px, transparent 16px, transparent 18px); opacity: 0.9; border-radius: 4px; margin-bottom: 16px; pointer-events: none; }
+        .barcode-row { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 8px; color: rgba(255,255,255,0.9); }
+        .barcode-row .pts { color: var(--accent); font-weight: 700; }
+        .barcode-footer { margin-top: 16px; text-align: center; font-size: 10px; font-weight: 700; color: rgba(255,255,255,0.5); text-transform: uppercase; letter-spacing: 0.8px; }
 
         /* ── Settings List ── */
-        .settings-list { margin: 8px 16px 0; border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow-sm); }
-        .settings-item {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 15px 16px;
-            background: var(--card);
-            border-bottom: 1px solid var(--border);
-            cursor: pointer;
-            transition: background 0.15s;
-            font-size: 14px;
-            font-weight: 500;
-            color: var(--text);
-        }
+        .settings-list { margin: 8px 16px 0; border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow-sm); flex-shrink: 0; }
+        .settings-item { display: flex; align-items: center; gap: 12px; padding: 15px 16px; background: var(--card); border-bottom: 1px solid var(--border); cursor: pointer; transition: background 0.15s; font-size: 14px; font-weight: 500; color: var(--text); }
         .settings-item:last-child { border-bottom: none; }
         .settings-item:hover { background: #f3f5fb; }
         .settings-item.danger { color: var(--red); }
         .settings-icon { font-size: 18px; }
-        .settings-item .chevron { margin-left: auto; color: var(--muted); font-size: 12px; }
+        .settings-item .chevron { margin-left: auto; color: var(--muted); font-size: 12px; font-weight: bold; }
 
-        /* ── Modal ── */
-        .modal-overlay {
-            position: absolute;
-            inset: 0;
-            background: rgba(10,17,40,0.65);
-            backdrop-filter: blur(4px);
-            z-index: 2000;
-            display: none;
-            flex-direction: column;
-            justify-content: flex-end;
+        /* ── Modals & Overlays ── */
+        .modal-overlay { 
+            position: absolute; inset: 0; background: rgba(10,17,40,0.65); backdrop-filter: blur(5px); z-index: 2000; 
+            display: flex; flex-direction: column; justify-content: flex-end;
+            opacity: 0; pointer-events: none; transition: opacity 0.3s ease;
         }
-        .modal-overlay.active { display: flex; }
-        .modal-sheet {
+        .modal-overlay.active { opacity: 1; pointer-events: auto; }
+        
+        .modal-sheet { 
+            background: var(--card); border-radius: 24px 24px 0 0; padding: 0 0 24px; 
+            transform: translateY(100%); transition: transform 0.35s cubic-bezier(.32,0,.67,0); 
+            display: flex; flex-direction: column; 
+        }
+        .modal-overlay.active .modal-sheet { transform: translateY(0); }
+        
+        .modal-handle { width: 36px; height: 4px; background: var(--border); border-radius: 2px; margin: 12px auto 20px; flex-shrink: 0; }
+        
+        /* Centered Modal */
+        .modal-center-box { 
+            background: var(--card); border-radius: 24px; padding: 24px; width: 85%; 
+            align-self: center; margin-bottom: auto; margin-top: auto; 
+            transform: scale(0.95); transition: all 0.3s cubic-bezier(.32,0,.67,0); box-shadow: var(--shadow-lg); 
+        }
+        .modal-overlay.active .modal-center-box { transform: scale(1); }
+
+        /* Full Barcode Modal (Entire sheet is scrollable) */
+        #barcode-modal-sheet {
+            height: 75vh; 
+            padding: 0;
+            overflow-y: auto; /* Entire container scrolls */
+            overscroll-behavior-y: contain; /* Prevent pull-to-refresh on background */
+            display: block; /* Overrides flex for normal scrolling flow */
             background: var(--card);
             border-radius: 24px 24px 0 0;
-            padding: 0 0 24px;
-            animation: slideUp 0.3s cubic-bezier(.32,0,.67,0) forwards;
-            transform: translateY(100%);
+            scroll-behavior: smooth;
         }
-        @keyframes slideUp { to { transform: translateY(0); } }
-        .modal-handle {
-            width: 36px; height: 4px;
-            background: var(--border);
-            border-radius: 2px;
-            margin: 12px auto 20px;
-        }
-        .modal-avatar-row {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 0 24px 16px;
-        }
-        .modal-avatar {
-            width: 72px; height: 72px;
-            border-radius: 50%;
-            background: var(--light);
-            border: 2px solid var(--border);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 32px;
-            margin-bottom: 10px;
-        }
+
+        .barcode-history-list { padding: 0 24px 24px; background: var(--card); }
+        .history-item { display: flex; justify-content: space-between; align-items: center; padding: 16px 0; border-bottom: 1px solid var(--border); }
+        .history-item:last-child { border-bottom: none; }
+        .history-icon { font-size: 18px; margin-right: 12px; display: inline-flex; width: 40px; height: 40px; background: var(--light); border-radius: 50%; align-items: center; justify-content: center; flex-shrink: 0;}
+        .history-details { flex: 1; }
+        .history-title { font-size: 14px; font-weight: 600; color: var(--text); margin: 0 0 4px; }
+        .history-date { font-size: 12px; color: var(--muted); margin: 0; }
+        .history-pts { font-size: 15px; font-weight: 700; flex-shrink: 0;}
+        .history-pts.pos { color: #16a34a; }
+        .history-pts.neg { color: var(--text); opacity: 0.7; }
+
+        /* Profile Modal Internal styling */
+        .modal-avatar-row { display: flex; flex-direction: column; align-items: center; padding: 0 24px 16px; flex-shrink: 0; }
+        .modal-avatar { width: 72px; height: 72px; border-radius: 50%; background: var(--light); border: 2px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 32px; margin-bottom: 10px; }
         .modal-name { font-size: 20px; font-weight: 700; color: var(--text); margin: 0; }
         .modal-course { font-size: 13px; color: var(--muted); margin: 2px 0 0; }
-        .modal-rows { border-top: 1px solid var(--border); }
-        .modal-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 13px 24px;
-            border-bottom: 1px solid var(--border);
-        }
-        .modal-row:last-of-type { border-bottom: none; }
+        .modal-rows { border-top: 1px solid var(--border); flex-shrink: 0; }
+        .modal-row { display: flex; justify-content: space-between; align-items: center; padding: 13px 24px; border-bottom: 1px solid var(--border); }
         .modal-key { font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.4px; }
         .modal-val { font-size: 13px; font-weight: 500; color: var(--text); text-align: right; max-width: 55%; }
-        .modal-close-btn {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            width: 28px; height: 28px;
-            border-radius: 50%;
-            background: var(--light);
-            border: 1px solid var(--border);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 14px;
-            cursor: pointer;
-            color: var(--muted);
-            transition: all 0.15s;
-        }
-        .modal-close-btn:hover { background: var(--border); color: var(--text); }
-        .modal-cta {
-            margin: 16px 24px 0;
-            width: calc(100% - 48px);
-            padding: 14px;
-            background: var(--navy);
-            color: white;
-            border: none;
-            border-radius: var(--radius-sm);
-            font-family: 'DM Sans', sans-serif;
-            font-size: 15px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background 0.2s, transform 0.1s;
-        }
-        .modal-cta:hover { background: var(--navy-soft); }
-        .modal-cta:active { transform: scale(0.98); }
-        
-        /* Bridge Button State Classes */
+        .modal-close-btn { position: absolute; top: 20px; right: 20px; width: 28px; height: 28px; border-radius: 50%; background: var(--light); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 14px; cursor: pointer; color: var(--muted); transition: all 0.15s; }
+        .modal-cta { margin: 16px 24px 0; width: calc(100% - 48px); padding: 14px; background: var(--navy); color: white; border: none; border-radius: var(--radius-sm); font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 600; cursor: pointer; transition: background 0.2s, transform 0.1s; flex-shrink: 0; }
         .modal-cta.bridge-btn { background: var(--accent); color: var(--navy); }
-        .modal-cta.bridge-btn:hover { background: #34d399; }
-        .modal-cta.pending { background: var(--border); color: var(--muted); cursor: default; transform: none; }
 
-        /* ── Map Popup ── */
-        .leaflet-popup-content-wrapper {
-            background: var(--navy) !important;
-            color: white !important;
-            border-radius: 14px !important;
-            padding: 0 !important;
-            box-shadow: var(--shadow-lg) !important;
-            border: 1px solid rgba(255,255,255,0.08) !important;
+        /* ── Context Menu (Message specific) ── */
+        .react-emoji-bar { display: flex; justify-content: space-around; padding: 10px 20px 20px; border-bottom: 1px solid var(--border); }
+        .react-emoji { font-size: 24px; cursor: pointer; transition: transform 0.2s; user-select: none; }
+        .react-emoji:hover, .react-emoji:active { transform: scale(1.2); }
+
+        /* ── Search UI Elements ── */
+        .search-wrapper { padding: 14px 20px 10px; background: var(--card); border-bottom: 1px solid var(--border); flex-shrink:0; }
+        .search-input-wrap { display: flex; align-items: center; gap: 10px; background: var(--light); border: 1.5px solid var(--border); border-radius: var(--radius-sm); padding: 10px 14px; transition: border-color 0.2s; }
+        .search-input { border: none; background: none; flex: 1; font-size: 14px; font-family: 'DM Sans', sans-serif; color: var(--text); outline: none; }
+        .chip-row { display: flex; gap: 7px; margin-top: 10px; overflow-x: auto; padding-bottom: 2px; }
+        
+        select.chip { 
+            background: var(--light); border: 1.5px solid var(--border); color: var(--muted); padding: 5px 24px 5px 13px; border-radius: var(--radius-pill); font-size: 12px; font-weight: 500; cursor: pointer; appearance: none; -webkit-appearance: none;
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="%238892A4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>'); background-repeat: no-repeat; background-position: right 8px center;
         }
-        .leaflet-popup-content {
-            margin: 0 !important;
-            padding: 14px 16px !important;
-            width: 200px !important;
-        }
+        select.chip:focus { border-color: var(--navy); outline: none; }
+
+        .person-meta { display: flex; align-items: center; gap: 5px; margin-top: 2px; }
+        .person-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--accent); }
+        .person-tag { font-size: 11px; color: var(--muted); }
+        .cp-badge { background: var(--accent-dim); border: 1px solid rgba(74,222,128,0.25); color: #16a34a; font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: var(--radius-pill); }
+
+        /* ── Map UI overrides ── */
+        .leaflet-popup-content-wrapper { background: var(--navy) !important; color: white !important; border-radius: 14px !important; padding: 0 !important; box-shadow: var(--shadow-lg) !important; border: 1px solid rgba(255,255,255,0.08) !important; }
+        .leaflet-popup-content { margin: 0 !important; padding: 14px 16px !important; width: 200px !important; }
         .leaflet-popup-tip { background: var(--navy) !important; }
         .leaflet-popup-close-button { display: none !important; }
-
-        .popup-tag {
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-            background: rgba(74,222,128,0.12);
-            border: 1px solid rgba(74,222,128,0.25);
-            color: var(--accent);
-            font-size: 10px;
-            font-weight: 600;
-            padding: 2px 8px;
-            border-radius: var(--radius-pill);
-            margin-bottom: 6px;
-        }
+        
+        .popup-tag { display: inline-flex; align-items: center; gap: 4px; background: rgba(74,222,128,0.12); border: 1px solid rgba(74,222,128,0.25); color: var(--accent); font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: var(--radius-pill); margin-bottom: 6px; }
         .popup-title { font-size: 15px; font-weight: 700; margin: 0 0 4px; color: white; }
         .popup-sub { font-size: 11px; color: rgba(255,255,255,0.5); margin: 0 0 2px; }
         .popup-count { font-size: 12px; font-weight: 600; color: white; margin: 6px 0 0; display:flex; justify-content:space-between; align-items:center;}
         .popup-friends { color: var(--accent); font-weight: 700; font-size: 11px;}
-        
-        .popup-btn {
-            background: var(--accent);
-            color: var(--navy);
-            border: none;
-            border-radius: var(--radius-sm);
-            padding: 8px 12px;
-            font-size: 12px;
-            font-family: 'DM Sans', sans-serif;
-            font-weight: 700;
-            margin-top: 12px;
-            width: 100%;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        .popup-btn.going {
-            background: rgba(255,255,255,0.15);
-            color: white;
-            border: 1px solid rgba(255,255,255,0.3);
-        }
+        .popup-btn { background: var(--accent); color: var(--navy); border: none; border-radius: var(--radius-sm); padding: 8px 12px; font-size: 12px; font-family: 'DM Sans', sans-serif; font-weight: 700; margin-top: 12px; width: 100%; cursor: pointer; transition: all 0.2s; }
+        .popup-btn.going { background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.3); }
 
-        /* ── Map Pins ── */
-        .map-pin {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            transform: translate(-50%, -100%);
-        }
-        .pin-body {
-            width: 32px; height: 32px;
-            background: var(--navy);
-            border-radius: 50% 50% 50% 0;
-            transform: rotate(-45deg);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 4px 12px rgba(10,17,40,0.4);
-            border: 2px solid rgba(255,255,255,0.15);
-        }
+        .map-pin { display: flex; flex-direction: column; align-items: center; transform: translate(-50%, -100%); transition: transform 0.2s; }
+        .map-pin:hover { transform: translate(-50%, -105%) scale(1.05); }
+        .pin-body { width: 32px; height: 32px; background: var(--navy); border-radius: 50% 50% 50% 0; transform: rotate(-45deg); display: flex; align-items: center; justify-content: center; border: 2px solid rgba(255,255,255,0.15); }
         .pin-body .pin-emoji { transform: rotate(45deg); font-size: 15px; }
-        .pin-label {
-            margin-top: 5px;
-            font-size: 10px;
-            font-weight: 700;
-            color: var(--navy);
-            text-shadow: 0 0 4px white, 0 0 8px white;
-            letter-spacing: 0.2px;
-        }
+        .pin-label { margin-top: 5px; font-size: 10px; font-weight: 700; color: var(--navy); text-shadow: 0 0 4px white, 0 0 8px white; white-space: nowrap; }
 
-        .user-pin-wrap {
-            transform: translate(-50%, -100%);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-        .user-pin-body {
-            width: 36px; height: 36px;
-            background: var(--accent);
-            border-radius: 50% 50% 50% 0;
-            transform: rotate(-45deg);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 0 0 3px rgba(74,222,128,0.25), 0 4px 14px rgba(74,222,128,0.4);
-        }
+        .user-pin-wrap { transform: translate(-50%, -100%); display: flex; flex-direction: column; align-items: center; }
+        .user-pin-body { width: 36px; height: 36px; background: var(--accent); border-radius: 50% 50% 50% 0; transform: rotate(-45deg); display: flex; align-items: center; justify-content: center; box-shadow: 0 0 0 3px rgba(74,222,128,0.25), 0 4px 14px rgba(74,222,128,0.4); }
         .user-pin-body span { transform: rotate(45deg); font-size: 16px; }
-        .user-pin-label {
-            margin-top: 5px;
-            font-size: 10px;
-            font-weight: 800;
-            color: var(--navy);
-            text-shadow: 0 0 4px white, 0 0 8px white;
-            letter-spacing: 0.5px;
-        }
+        
+        .friend-pin-wrap { transform: translate(-50%, -100%); display: flex; flex-direction: column; align-items: center; transition: transform 0.2s; }
+        .friend-pin-wrap:hover { transform: translate(-50%, -105%) scale(1.05); }
+        .friend-pin-body { width: 34px; height: 34px; border-radius: 50%; border: 2px solid var(--accent); background: var(--light); display: flex; align-items: center; justify-content: center; font-size: 18px; box-shadow: 0 4px 10px rgba(10,17,40,0.3); }
+        .friend-pin-label { margin-top: 4px; font-size: 10px; font-weight: 800; color: var(--navy); text-shadow: 0 0 4px white, 0 0 8px white; white-space: nowrap; }
 
-        /* ── Map overlay chip ── */
-        .map-chip {
-            position: absolute;
-            bottom: 16px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: var(--navy);
-            color: white;
-            border: 1px solid rgba(255,255,255,0.1);
-            border-radius: var(--radius-pill);
-            padding: 8px 16px;
-            font-size: 12px;
-            font-weight: 600;
-            white-space: nowrap;
-            z-index: 500;
-            box-shadow: var(--shadow-md);
-            pointer-events: none;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
+        .map-chip { position: absolute; bottom: 16px; left: 50%; transform: translateX(-50%); background: var(--navy); color: white; border: 1px solid rgba(255,255,255,0.1); border-radius: var(--radius-pill); padding: 8px 16px; font-size: 12px; font-weight: 600; white-space: nowrap; z-index: 500; box-shadow: var(--shadow-md); display: flex; align-items: center; gap: 6px; }
         .map-chip-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); animation: blink 1.6s infinite; }
+        
         @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
-
-        /* ── Scrollbar ── */
-        .screen::-webkit-scrollbar { width: 3px; }
-        .screen::-webkit-scrollbar-track { background: transparent; }
-        .screen::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
-
-        /* People list item detail */
-        .person-meta { display: flex; align-items: center; gap: 5px; margin-top: 2px; }
-        .person-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--accent); }
-        .person-tag { font-size: 11px; color: var(--muted); }
-
-        /* Crossed paths badge */
-        .cp-badge {
-            background: var(--accent-dim);
-            border: 1px solid rgba(74,222,128,0.25);
-            color: #16a34a;
-            font-size: 10px;
-            font-weight: 600;
-            padding: 2px 8px;
-            border-radius: var(--radius-pill);
-            white-space: nowrap;
-            flex-shrink: 0;
+        @keyframes pulse-ring { 0% { transform: scale(0.8); opacity: 0.5; } 80%, 100% { transform: scale(1.5); opacity: 0; } }
+        
+        .pulse-circle { 
+            transform-box: fill-box;
+            transform-origin: center;
+            animation: pulse-ring 3s cubic-bezier(0.215, 0.61, 0.355, 1) infinite; 
         }
     </style>
 </head>
 <body>
 
 <div id="phone">
+
+    <!-- ── Login Screen Overlay ── -->
+    <div id="screen-login">
+        <div class="login-logo">
+            <div class="login-logo-icon">🎓</div>
+            Bridge
+        </div>
+        <form class="login-card" onsubmit="doLogin(event)">
+            <div style="text-align: center; margin-bottom: 8px;">
+                <h2 style="margin: 0 0 4px; font-size: 20px; color: var(--text);">Welcome Back</h2>
+                <p style="margin: 0; font-size: 13px; color: var(--muted);">Log in to your Campus OS</p>
+            </div>
+            <input type="email" class="login-input" placeholder="University Email" required value="student@bath.ac.uk">
+            <input type="password" class="login-input" placeholder="Password" required value="password123">
+            <button type="submit" class="login-btn">Log In</button>
+        </form>
+        <p style="color: rgba(255,255,255,0.5); font-size: 12px; margin-top: 32px;">Secure University Login</p>
+    </div>
 
     <div class="status-bar">
         <span>9:41</span>
@@ -843,7 +404,7 @@
 
     <div class="top-bar">
         <div class="logo">
-            <div class="logo-icon">🎓</div>
+            <div class="logo-icon" style="width: 24px; height: 24px; font-size: 12px; border-radius: 6px;">🎓</div>
             Bridge
         </div>
         <div class="toggle-pill" onclick="toggleLoc()">
@@ -860,30 +421,26 @@
 
     <div id="screen-messages" class="screen">
         <div class="notes-row">
-            <div class="note-item" onclick="setIntentNote()">
+            <div class="note-item" onclick="openIntentModal()">
                 <div style="display:flex;flex-direction:column;align-items:center;gap:3px;">
                     <div class="note-bubble-wrap">
                         <div class="note-bubble" id="user-intent-bubble" style="display:none; background: var(--accent); color: var(--navy);"></div>
                     </div>
-                    <div class="note-ring you">
-                        <div class="note-inner">📍</div>
-                    </div>
+                    <div class="note-ring you"><div class="note-inner">📍</div></div>
                     <div class="note-name">You<br><span style="font-size:8px; color:var(--muted)">Tap to set</span></div>
                 </div>
             </div>
-            <div class="note-item">
+            <div class="note-item" onclick="openChatView('@brestinou', '👤', '')">
                 <div style="display:flex;flex-direction:column;align-items:center;gap:3px;">
                     <div class="note-bubble-wrap">
                         <div class="note-bubble">Anyone wanna go labs tonight?</div>
                     </div>
-                    <div class="note-ring">
-                        <div class="note-inner">👤</div>
-                    </div>
+                    <div class="note-ring"><div class="note-inner">👤</div></div>
                     <div class="note-name">@brestinou</div>
-                    <div class="note-spotify">🎵 skibidi toilet</div>
+                    <div class="note-spotify"><span style="font-size:12px">🎵</span> Skibidi Toilet</div>
                 </div>
             </div>
-            <div class="note-item">
+            <div class="note-item" onclick="openChatView('Sarah M.', '📚', 'background:#DCFCE7;border-color:#BBF7D0;')">
                 <div style="display:flex;flex-direction:column;align-items:center;gap:3px;">
                     <div class="note-bubble-wrap">
                         <div class="note-bubble" style="background:#1E3A8A;">Library grind 😭</div>
@@ -894,7 +451,7 @@
                     <div class="note-name">Sarah</div>
                 </div>
             </div>
-            <div class="note-item">
+            <div class="note-item" onclick="openChatView('RSS · Russian Speaking Society', '🪆', 'background:#FEF3C7;border-color:#FDE68A;')">
                 <div style="display:flex;flex-direction:column;align-items:center;gap:3px;">
                     <div class="note-bubble-wrap">
                         <div class="note-bubble" style="background:#7C3AED;">Pre-drinks at mine 🍾</div>
@@ -907,12 +464,17 @@
             </div>
         </div>
 
-        <div class="section-header">
-            <h2>Messages</h2>
-        </div>
-
+        <div class="section-header"><h2>Messages</h2></div>
         <ul class="chat-list" id="main-messages-list">
-            <li class="chat-item" onclick="openChatView('Alex Mercer', '👨‍🎓', 'background:#EFF6FF;border-color:#BFDBFE;')">
+            <li class="chat-item pinned" onclick="openChatView('My Flat (Woodland Court)', '🏠', 'background:#E0E7FF;border-color:#C7D2FE;')">
+                <div class="avatar" style="background:#E0E7FF;border-color:#C7D2FE;">🏠</div>
+                <div class="chat-info">
+                    <p class="chat-name">My Flat (Woodland Court)</p>
+                    <p class="chat-preview">Leo: Who is bringing the speaker tonight?</p>
+                </div>
+                <span class="chat-time">2m</span>
+            </li>
+            <li class="chat-item" onclick="openChatView('Alex Mercer', '👨‍🎓', 'background:#EFF6FF;border-color:#BFDBFE;', '📍 You crossed paths at Library 2 hrs ago')">
                 <div class="avatar" style="background:#EFF6FF;border-color:#BFDBFE;">👨‍🎓</div>
                 <div class="chat-info">
                     <p class="chat-name">Alex Mercer</p>
@@ -936,124 +498,103 @@
                 </div>
                 <span class="chat-time">12m</span>
             </li>
-            <li class="chat-item" onclick="openChatView('Sarah M.', '📚', 'background:#DCFCE7;border-color:#BBF7D0;')">
-                <div class="avatar" style="background:#DCFCE7;border-color:#BBF7D0;">📚</div>
-                <div class="chat-info">
-                    <p class="chat-name">Sarah M.</p>
-                    <p class="chat-preview">Are you heading to the library later?</p>
-                </div>
-                <span class="chat-time">1h</span>
-            </li>
         </ul>
-    </div>
-
-    <div id="screen-chat-active" class="screen">
-        <div class="chat-header">
-            <button class="back-btn" onclick="closeChatView()">←</button>
-            <h2 id="active-chat-name" style="margin:0; font-size: 16px;">Chat Name</h2>
-        </div>
-        <div class="chat-messages" id="chat-messages-container">
-            </div>
-        <div class="chat-input-area">
-            <input type="text" id="chat-input-field" class="chat-input" placeholder="Message..." onkeypress="handleChatKeyPress(event)">
-            <button class="send-btn" onclick="sendMessage()">↑</button>
-        </div>
     </div>
 
     <div id="screen-search" class="screen">
-        <div class="section-header"><h2>People Finder</h2></div>
+        <div class="section-header" style="display:flex; justify-content:space-between; align-items:center; flex-shrink:0;">
+            <h2>People Finder</h2>
+            <div class="toggle-pill" onclick="toggleNewPeople()" style="border-color: var(--border);">
+                <span class="toggle-label" style="color:var(--text)">New People</span>
+                <div class="toggle-track off" id="new-people-track"><div class="toggle-thumb"></div></div>
+            </div>
+        </div>
+        
         <div class="search-wrapper">
             <div class="search-input-wrap">
                 <span>🔍</span>
-                <input class="search-input" id="searchInput" placeholder="Search by name, course, interest…" oninput="runSearch()">
+                <input class="search-input" id="searchInput" placeholder="Search by name…" oninput="runSearch()">
             </div>
             <div class="chip-row" id="chipRow">
-                <div class="chip active" onclick="setFilter(this,'All')">All</div>
-                <div class="chip" onclick="setFilter(this,'Engineering')">Engineering</div>
-                <div class="chip" onclick="setFilter(this,'Economics')">Economics</div>
-                <div class="chip" onclick="setFilter(this,'Tennis')">Tennis</div>
+                <select class="chip" id="filter-year" onchange="runSearch()">
+                    <option value="all">Year: All</option>
+                    <option value="year 1">Year 1</option>
+                    <option value="year 2">Year 2</option>
+                    <option value="year 3">Year 3</option>
+                </select>
+                <select class="chip" id="filter-course" onchange="runSearch()">
+                    <option value="all">Course: All</option>
+                    <option value="engineering">Engineering</option>
+                    <option value="economics">Economics</option>
+                    <option value="computer science">Comp Sci</option>
+                </select>
+                <select class="chip" id="filter-interest" onchange="runSearch()">
+                    <option value="all">Interests: All</option>
+                    <option value="tennis">Tennis</option>
+                    <option value="chess">Chess</option>
+                    <option value="anime">Anime</option>
+                    <option value="finance">Finance</option>
+                </select>
             </div>
         </div>
-        <ul class="chat-list" id="peopleList">
-            <li class="chat-item search-row" data-tags="engineering tennis" data-bridged="true"
-                onclick="openModal('Alex Mercer','👨‍🎓','Mechanical Engineering','Tennis, Formula Student','Today 2:30 PM','📍 Crossed paths at Library', true)">
-                <div class="avatar" style="background:#EFF6FF;border-color:#BFDBFE;">👨‍🎓</div>
-                <div class="chat-info">
-                    <p class="chat-name">Alex Mercer</p>
-                    <div class="person-meta">
-                        <span class="person-tag">Mechanical Engineering</span>
-                        <div class="person-dot"></div>
-                        <span class="person-tag">Tennis</span>
+
+        <div style="flex:1; overflow-y:auto;">
+            <div id="suggested-section">
+                <div class="form-label" style="margin: 16px 20px 8px;">Suggested (Crossed Paths)</div>
+                <div class="notes-row" style="padding: 0 12px 16px; border-bottom: 1px solid var(--border);">
+                    <div class="note-item" onclick="openModal('Alex Mercer','👨‍🎓','Mechanical Engineering','Tennis, Formula Student','Today 2:30 PM','📍 Crossed paths at Library', true)">
+                        <div class="avatar" style="background:#EFF6FF;border-color:#BFDBFE; width: 56px; height: 56px;">👨‍🎓</div>
+                        <div class="note-name" style="margin-top: 4px; font-size:11px;">Alex</div>
+                    </div>
+                    <div class="note-item" onclick="openModal('Chloe Davies','👩‍🎓','Economics Year 1','Bath Entrepreneurs, Finance','Yesterday','📍 SU Pre-Drinks', true)">
+                        <div class="avatar" style="background:#FFF7ED;border-color:#FED7AA; width: 56px; height: 56px;">👩‍🎓</div>
+                        <div class="note-name" style="margin-top: 4px; font-size:11px;">Chloe</div>
+                    </div>
+                    <div class="note-item" onclick="openModal('Liam Chen','🧑‍🔬','Civil Engineering','Engineering, Chess','Nov 5','📍 Engineering Block', false)">
+                        <div class="avatar" style="background:#F3E8FF;border-color:#D8B4FE; width: 56px; height: 56px;">🧑‍🔬</div>
+                        <div class="note-name" style="margin-top: 4px; font-size:11px;">Liam</div>
                     </div>
                 </div>
-                <span class="cp-badge">Crossed paths</span>
-            </li>
-            <li class="chat-item search-row" data-tags="economics" data-bridged="true"
-                onclick="openModal('Chloe Davies','👩‍🎓','Economics Year 1','Bath Entrepreneurs, Finance','Yesterday','🔍 Bridged via Search', true)">
-                <div class="avatar" style="background:#FFF7ED;border-color:#FED7AA;">👩‍🎓</div>
-                <div class="chat-info">
-                    <p class="chat-name">Chloe Davies</p>
-                    <div class="person-meta">
-                        <span class="person-tag">Economics</span>
-                        <div class="person-dot"></div>
-                        <span class="person-tag">Bath Entrepreneurs</span>
+            </div>
+
+            <div class="form-label" style="margin: 16px 20px 8px;">Directory</div>
+            <div id="empty-search-state" style="display:none; text-align:center; padding:40px; color:var(--muted); font-size:14px;">No students found matching your filters.</div>
+            <ul class="chat-list" id="peopleList" style="flex:none; overflow:visible;">
+                <li class="chat-item search-row" data-friend="true" data-year="year 1" data-course="engineering" data-interest="tennis" data-bridged="true" onclick="openModal('Alex Mercer','👨‍🎓','Mechanical Engineering','Tennis, Formula Student','Today 2:30 PM','📍 Crossed paths at Library', true)">
+                    <div class="avatar" style="background:#EFF6FF;border-color:#BFDBFE;">👨‍🎓</div>
+                    <div class="chat-info">
+                        <p class="chat-name">Alex Mercer <span style="font-size:10px;color:var(--accent);border:1px solid var(--accent);border-radius:4px;padding:0 4px;margin-left:6px;">Friend</span></p>
+                        <div class="person-meta"><span class="person-tag">Mech Eng (Y1)</span><div class="person-dot"></div><span class="person-tag">Tennis</span></div>
                     </div>
-                </div>
-            </li>
-            <li class="chat-item search-row" data-tags="engineering" data-bridged="true"
-                onclick="openModal('Sam Smith','👨‍💻','Software Engineering','Anime Society, Coding','Last week','🔍 Bridged via Search', true)">
-                <div class="avatar" style="background:#F0FDF4;border-color:#BBF7D0;">👨‍💻</div>
-                <div class="chat-info">
-                    <p class="chat-name">Sam Smith</p>
-                    <div class="person-meta">
-                        <span class="person-tag">Software Engineering</span>
-                        <div class="person-dot"></div>
-                        <span class="person-tag">Anime Society</span>
+                    <span class="cp-badge">Crossed paths</span>
+                </li>
+                <li class="chat-item search-row" data-friend="true" data-year="year 1" data-course="economics" data-interest="finance" data-bridged="true" onclick="openModal('Chloe Davies','👩‍🎓','Economics Year 1','Bath Entrepreneurs, Finance','Yesterday','-', true)">
+                    <div class="avatar" style="background:#FFF7ED;border-color:#FED7AA;">👩‍🎓</div>
+                    <div class="chat-info">
+                        <p class="chat-name">Chloe Davies <span style="font-size:10px;color:var(--accent);border:1px solid var(--accent);border-radius:4px;padding:0 4px;margin-left:6px;">Friend</span></p>
+                        <div class="person-meta"><span class="person-tag">Economics (Y1)</span><div class="person-dot"></div><span class="person-tag">Finance</span></div>
                     </div>
-                </div>
-            </li>
-            <li class="chat-item search-row" data-tags="tennis" data-bridged="true"
-                onclick="openModal('Jessica Alba','🎾','Sports Science','Tennis, Athletics','Oct 12th','📍 Crossed paths at Sports Village', true)">
-                <div class="avatar" style="background:#FFF1F2;border-color:#FECDD3;">🎾</div>
-                <div class="chat-info">
-                    <p class="chat-name">Jessica Alba</p>
-                    <div class="person-meta">
-                        <span class="person-tag">Sports Science</span>
-                        <div class="person-dot"></div>
-                        <span class="person-tag">Tennis</span>
+                </li>
+                <li class="chat-item search-row" data-friend="false" data-year="year 2" data-course="computer science" data-interest="anime" data-bridged="false" onclick="openModal('Sam Smith','👨‍💻','Computer Science','Anime Society, Coding','Last week','-', false)">
+                    <div class="avatar" style="background:#F0FDF4;border-color:#BBF7D0;">👨‍💻</div>
+                    <div class="chat-info">
+                        <p class="chat-name">Sam Smith</p>
+                        <div class="person-meta"><span class="person-tag">Comp Sci (Y2)</span><div class="person-dot"></div><span class="person-tag">Anime Society</span></div>
                     </div>
-                </div>
-                <span class="cp-badge">Crossed paths</span>
-            </li>
-            
-            <li class="chat-item search-row" data-tags="engineering" data-bridged="false"
-                onclick="openModal('Liam Chen','🧑‍🔬','Civil Engineering','Engineering, Chess','-','🔍 Search', false)">
-                <div class="avatar" style="background:#F3E8FF;border-color:#D8B4FE;">🧑‍🔬</div>
-                <div class="chat-info">
-                    <p class="chat-name">Liam Chen</p>
-                    <div class="person-meta">
-                        <span class="person-tag">Civil Engineering</span>
-                        <div class="person-dot"></div>
-                        <span class="person-tag">Chess</span>
+                </li>
+                <li class="chat-item search-row" data-friend="false" data-year="year 3" data-course="engineering" data-interest="chess" data-bridged="false" onclick="openModal('Liam Chen','🧑‍🔬','Civil Engineering','Engineering, Chess','-','-', false)">
+                    <div class="avatar" style="background:#F3E8FF;border-color:#D8B4FE;">🧑‍🔬</div>
+                    <div class="chat-info">
+                        <p class="chat-name">Liam Chen</p>
+                        <div class="person-meta"><span class="person-tag">Civil Eng (Y3)</span><div class="person-dot"></div><span class="person-tag">Chess</span></div>
                     </div>
-                </div>
-            </li>
-            <li class="chat-item search-row" data-tags="economics tennis" data-bridged="false"
-                onclick="openModal('Zoe Martinez','🙋‍♀️','Economics Year 2','Tennis, Reading','-','🔍 Search', false)">
-                <div class="avatar" style="background:#FFE4E6;border-color:#FDA4AF;">🙋‍♀️</div>
-                <div class="chat-info">
-                    <p class="chat-name">Zoe Martinez</p>
-                    <div class="person-meta">
-                        <span class="person-tag">Economics</span>
-                        <div class="person-dot"></div>
-                        <span class="person-tag">Tennis</span>
-                    </div>
-                </div>
-            </li>
-        </ul>
+                </li>
+            </ul>
+        </div>
     </div>
 
-    <div id="screen-profile" class="screen">
+    <!-- ── Profile Screen ── -->
+    <div id="screen-profile" class="screen" style="padding-bottom: 24px;">
         <div class="profile-hero">
             <div class="profile-avatar-wrap">ME</div>
             <p class="profile-name">You</p>
@@ -1064,28 +605,196 @@
             </div>
         </div>
 
-        <div class="barcode-card" onclick="this.classList.toggle('open')">
+        <div class="barcode-card" 
+             onmousedown="startBarcodePress(event)" onmouseup="cancelBarcodePress()" onmouseleave="cancelBarcodePress()"
+             ontouchstart="startBarcodePress(event)" ontouchend="cancelBarcodePress()" ontouchcancel="cancelBarcodePress()"
+             oncontextmenu="event.preventDefault()">
             <div class="barcode-header">
                 <span class="barcode-label">Bridge Barcode</span>
-                <span class="barcode-chevron">▼</span>
             </div>
             <div class="barcode-pts">885</div>
-            <div class="barcode-value">≈ £8.85 redeemable value · Tap to expand</div>
-            <div class="barcode-body">
-                <hr class="barcode-divider">
-                <div class="barcode-row"><span>📍 Attended Labyrinth Monday</span><span class="pts">+80</span></div>
-                <div class="barcode-row"><span>🤝 Crossed paths: Alex Mercer</span><span class="pts">+5</span></div>
-                <div class="barcode-row"><span>📍 Attended SU Pre-Drinks</span><span class="pts">+80</span></div>
-            </div>
+            <div class="barcode-value">≈ £8.85 redeemable value</div>
+            <div class="css-barcode"></div>
+            
+            <hr style="border:none; border-top: 1px solid rgba(255,255,255,0.2); margin: 16px 0;">
+            <div class="barcode-row"><span>📍 Attended Labyrinth Monday</span><span class="pts">+80</span></div>
+            <div class="barcode-row"><span>🤝 Crossed paths: Alex Mercer</span><span class="pts">+5</span></div>
+            <div class="barcode-row"><span>🎉 Attended SU Pre-Drinks</span><span class="pts">+80</span></div>
+            
+            <div class="barcode-footer">Long hold for full history</div>
         </div>
 
-        <div class="settings-list">
-            <div class="settings-item" onclick="triggerEditProfile()"><span class="settings-icon">✏️</span> Edit Profile <span class="chevron">›</span></div>
-            <div class="settings-item"><span class="settings-icon">⚙️</span> Settings <span class="chevron">›</span></div>
-            <div class="settings-item danger" onclick="triggerReport()"><span class="settings-icon">🛡️</span> Safety & Reporting <span class="chevron">›</span></div>
+        <div class="settings-list" style="margin-top: 8px; margin-bottom: 24px;">
+            <div class="settings-item" onclick="toggleAdminMode()">
+                <span class="settings-icon">🛠️</span> Admin Mode (Map Demo)
+                <span class="chevron" id="admin-mode-status" style="color: var(--navy);">OFF</span>
+            </div>
+            <div class="settings-item" onclick="openSubScreen('screen-edit-profile')">
+                <span class="settings-icon">✏️</span> Edit Profile <span class="chevron">›</span>
+            </div>
+            <div class="settings-item" onclick="openSubScreen('screen-settings')">
+                <span class="settings-icon">⚙️</span> Settings <span class="chevron">›</span>
+            </div>
+            <div class="settings-item danger" onclick="openSubScreen('screen-safety')">
+                <span class="settings-icon">🛡️</span> Safety & Reporting <span class="chevron">›</span>
+            </div>
         </div>
     </div>
 
+    <!-- Sub Screens (Edit Profile, Settings, Blocked, Safety, Chat) -->
+    <div id="screen-chat-active" class="sub-screen">
+        <div class="sub-header">
+            <button class="back-btn" onclick="closeChatView()">←</button>
+            <h2 id="active-chat-name" style="margin:0; font-size: 16px;">Chat Name</h2>
+        </div>
+        <div id="chat-context-banner" class="chat-context-banner"></div>
+        <div class="chat-messages" id="chat-messages-container"></div>
+        
+        <div id="reply-banner" style="display:none; background: var(--light); padding: 8px 20px; font-size: 12px; color: var(--muted); border-top: 1px solid var(--border); justify-content: space-between; align-items: center; box-shadow: 0 -2px 5px rgba(0,0,0,0.02);">
+            <div style="flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                Replying to: <span id="reply-text" style="color:var(--text); font-weight:600;"></span>
+            </div>
+            <button onclick="cancelReply()" style="background:none; border:none; color:var(--muted); font-size:16px; cursor:pointer; padding: 0 4px;">✕</button>
+        </div>
+        
+        <div class="chat-input-area">
+            <input type="text" id="chat-input-field" class="chat-input" placeholder="Message..." onkeypress="handleChatKeyPress(event)">
+            <button class="send-btn" onclick="sendMessage()">↑</button>
+        </div>
+    </div>
+
+    <div id="screen-edit-profile" class="sub-screen">
+        <div class="sub-header">
+            <button class="back-btn" onclick="closeSubScreen('screen-edit-profile')">←</button>
+            <h2>Edit Profile</h2>
+        </div>
+        <div style="flex:1; overflow-y:auto; padding-bottom: 24px;">
+            <div class="profile-avatar-wrap" style="margin: 20px auto; background:var(--light); border-color:var(--border); color:var(--navy); position: relative; cursor: pointer;" onclick="alert('Upload new profile picture')">
+                ME
+                <div style="position: absolute; bottom: -4px; right: -4px; background: var(--navy); color: white; width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; border: 2px solid white; box-shadow: var(--shadow-sm);">
+                    📷
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Display Name</label>
+                <input class="form-input" type="text" value="You">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Course</label>
+                <input class="form-input" type="text" value="Mechanical Engineering">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Bio & Interests (Comma separated)</label>
+                <input class="form-input" type="text" value="Tennis, F1, Coding">
+            </div>
+            
+            <div class="settings-list" style="margin: 20px 16px; box-shadow:none; border:1px solid var(--border);">
+                <div class="settings-item" onclick="toggleSwitch(this)">
+                    <span class="settings-icon">🎵</span> Connect Spotify
+                    <div class="toggle-track off" style="margin-left:auto;"><div class="toggle-thumb"></div></div>
+                </div>
+            </div>
+            
+            <button class="btn-primary" onclick="alert('Profile Saved!'); closeSubScreen('screen-edit-profile');">Save Changes</button>
+        </div>
+    </div>
+
+    <div id="screen-settings" class="sub-screen">
+        <div class="sub-header">
+            <button class="back-btn" onclick="closeSubScreen('screen-settings')">←</button>
+            <h2>Settings</h2>
+        </div>
+        <div style="flex:1; overflow-y:auto; padding-bottom: 24px;">
+            <div class="form-label" style="margin: 20px 20px 8px;">Notifications</div>
+            <div class="settings-list" style="margin-top:0;">
+                <div class="settings-item" onclick="toggleSwitch(this)">
+                    💬 Direct Messages <div class="toggle-track" style="margin-left:auto;"><div class="toggle-thumb"></div></div>
+                </div>
+                <div class="settings-item" onclick="toggleSwitch(this)">
+                    📍 Crossed Paths Alerts <div class="toggle-track" style="margin-left:auto;"><div class="toggle-thumb"></div></div>
+                </div>
+            </div>
+            
+            <div class="form-label" style="margin: 24px 20px 8px;">Privacy</div>
+            <div class="settings-list" style="margin-top:0;">
+                <div class="settings-item" onclick="openSubScreen('screen-blocked-users')">
+                    Blocked Users <span class="chevron">›</span>
+                </div>
+            </div>
+            
+            <div class="settings-list" style="margin-top: 30px;">
+                <div class="settings-item danger" style="justify-content:center;" onclick="doLogout()">Log Out</div>
+            </div>
+        </div>
+    </div>
+
+    <div id="screen-blocked-users" class="sub-screen">
+        <div class="sub-header">
+            <button class="back-btn" onclick="closeSubScreen('screen-blocked-users')">←</button>
+            <h2>Blocked Users</h2>
+        </div>
+        <div style="flex:1; overflow-y:auto;">
+            <div class="form-label" style="margin: 20px 20px 8px;">Blocked Accounts</div>
+            <ul class="chat-list" id="blocked-users-list">
+                <li class="chat-item" style="justify-content: space-between;" id="blocked-1">
+                    <div style="display:flex; align-items:center; gap:14px;">
+                        <div class="avatar" style="background:#FEE2E2;border-color:#FCA5A5;">🛑</div>
+                        <div class="chat-info">
+                            <p class="chat-name" style="margin:0;">John Doe</p>
+                        </div>
+                    </div>
+                    <button style="background:var(--card); border:1px solid var(--border); color:var(--text); padding:6px 12px; border-radius:100px; font-size:12px; font-weight:600; cursor:pointer;" onclick="unblockUser('blocked-1')">Unblock</button>
+                </li>
+                <li class="chat-item" style="justify-content: space-between;" id="blocked-2">
+                    <div style="display:flex; align-items:center; gap:14px;">
+                        <div class="avatar" style="background:#F3E8FF;border-color:#D8B4FE;">🛑</div>
+                        <div class="chat-info">
+                            <p class="chat-name" style="margin:0;">Jane Smith</p>
+                        </div>
+                    </div>
+                    <button style="background:var(--card); border:1px solid var(--border); color:var(--text); padding:6px 12px; border-radius:100px; font-size:12px; font-weight:600; cursor:pointer;" onclick="unblockUser('blocked-2')">Unblock</button>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <div id="screen-safety" class="sub-screen">
+        <div class="sub-header">
+            <button class="back-btn" onclick="closeSubScreen('screen-safety')">←</button>
+            <h2>Safety Center</h2>
+        </div>
+        <div style="flex:1; overflow-y:auto; padding: 20px;">
+            <p style="font-size:14px; color:var(--muted); line-height:1.5; margin-top:0;">Bridge operates a zero-tolerance policy. Reports are monitored by verified admins to ensure a high-trust campus environment.</p>
+            
+            <div class="barcode-card" style="margin: 20px 0; background: linear-gradient(135deg, #DC2626, #EF4444); cursor:pointer; box-shadow: 0 8px 24px rgba(239, 68, 68, 0.35);" onclick="alert('Calling Campus Security...')">
+                <div class="barcode-pts" style="font-size:24px; display:flex; align-items:center; gap:10px;">🚨 Quick Dial Security</div>
+                <div class="barcode-value" style="color:white; opacity:0.8; margin-top:8px;">Tap to immediately connect to University Security</div>
+            </div>
+            
+            <div class="settings-list" style="margin: 0; box-shadow:none; border:1px solid var(--border);">
+                <div class="settings-item danger" onclick="alert('Select a user or incident to report.')">🚩 Report an Incident <span class="chevron">›</span></div>
+                <div class="settings-item">Read Community Guidelines <span class="chevron">›</span></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Modals ── -->
+
+    <!-- Intent Setter Modal -->
+    <div id="intent-modal" class="modal-overlay" onclick="closeIntentModal(event)">
+        <div class="modal-center-box" onclick="event.stopPropagation()">
+            <h3 style="margin: 0 0 12px; font-size: 18px; color: var(--navy);">Set Intent Note</h3>
+            <p style="margin: 0 0 16px; font-size: 13px; color: var(--muted);">What's your plan for the next 12 hours?</p>
+            <textarea id="intent-input" maxlength="60" rows="3" placeholder="Heading to the library, need a buddy!" style="width: 100%; border: 1.5px solid var(--border); border-radius: 12px; padding: 12px; font-family: 'DM Sans'; font-size: 14px; resize: none; outline: none;"></textarea>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 12px;">
+                <span id="intent-char-count" style="font-size: 12px; color: var(--muted);">0/60</span>
+                <button class="btn-primary" style="margin: 0; width: auto; padding: 10px 24px;" onclick="saveIntentNote()">Post</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Profile Overview Modal -->
     <div id="modal" class="modal-overlay" onclick="handleModalClick(event)">
         <div class="modal-sheet" onclick="event.stopPropagation()">
             <div class="modal-handle"></div>
@@ -1104,178 +813,540 @@
         </div>
     </div>
 
+    <!-- Barcode Full History Modal (Entire sheet is now one scrollable flow with scroll-to-dismiss) -->
+    <div id="barcode-modal" class="modal-overlay" onclick="closeBarcodeModal(event)">
+        <div class="modal-sheet" id="barcode-modal-sheet" onclick="event.stopPropagation()">
+            
+            <!-- Sticky Handle at top -->
+            <div style="position: sticky; top: 0; padding-top: 12px; background: transparent; z-index: 20;">
+                <div class="modal-handle" style="background: rgba(255,255,255,0.4);"></div>
+            </div>
+            
+            <!-- Blue Header (Scrolls naturally) -->
+            <div style="background: linear-gradient(135deg, #1E3A8A 0%, #2563EB 50%, #3B82F6 100%); padding: 12px 24px 24px; text-align: center; color: white; margin-top: -36px; padding-top: 36px; flex-shrink: 0;">
+                <h2 style="margin: 0 0 6px; font-size: 13px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: rgba(255,255,255,0.85);">Bridge Barcode</h2>
+                <div style="font-size: 48px; font-weight: 700; line-height: 1; text-shadow: 0 2px 10px rgba(0,0,0,0.1);">885 <span style="font-size: 16px; font-weight: 500; opacity: 0.8;">pts</span></div>
+                <div class="css-barcode" style="margin-top: 20px; height: 60px;"></div>
+            </div>
+            
+            <!-- History List (Scrolls naturally under header) -->
+            <div class="barcode-history-list" id="barcode-history-list">
+                <div class="history-item">
+                    <span class="history-icon">📍</span>
+                    <div class="history-details">
+                        <p class="history-title">Attended Labyrinth Monday</p>
+                        <p class="history-date">Today, 11:30 PM</p>
+                    </div>
+                    <span class="history-pts pos">+80</span>
+                </div>
+                <div class="history-item">
+                    <span class="history-icon">🤝</span>
+                    <div class="history-details">
+                        <p class="history-title">Crossed paths: Alex Mercer</p>
+                        <p class="history-date">Today, 2:30 PM</p>
+                    </div>
+                    <span class="history-pts pos">+5</span>
+                </div>
+                <div class="history-item">
+                    <span class="history-icon">🎉</span>
+                    <div class="history-details">
+                        <p class="history-title">Attended SU Pre-Drinks</p>
+                        <p class="history-date">Yesterday</p>
+                    </div>
+                    <span class="history-pts pos">+80</span>
+                </div>
+                <div class="history-item">
+                    <span class="history-icon">☕</span>
+                    <div class="history-details">
+                        <p class="history-title">Redeemed: Cafe Nero Coffee</p>
+                        <p class="history-date">Nov 12</p>
+                    </div>
+                    <span class="history-pts neg">-30</span>
+                </div>
+                <div class="history-item">
+                    <span class="history-icon">🤝</span>
+                    <div class="history-details">
+                        <p class="history-title">Crossed paths: Sarah M.</p>
+                        <p class="history-date">Nov 11</p>
+                    </div>
+                    <span class="history-pts pos">+5</span>
+                </div>
+                <div class="history-item">
+                    <span class="history-icon">🏛️</span>
+                    <div class="history-details">
+                        <p class="history-title">Joined History Society</p>
+                        <p class="history-date">Nov 10</p>
+                    </div>
+                    <span class="history-pts pos">+20</span>
+                </div>
+                <div class="history-item">
+                    <span class="history-icon">📍</span>
+                    <div class="history-details">
+                        <p class="history-title">Attended Campus Tour</p>
+                        <p class="history-date">Nov 8</p>
+                    </div>
+                    <span class="history-pts pos">+50</span>
+                </div>
+                <div class="history-item">
+                    <span class="history-icon">🤝</span>
+                    <div class="history-details">
+                        <p class="history-title">Crossed paths: Liam Chen</p>
+                        <p class="history-date">Nov 5</p>
+                    </div>
+                    <span class="history-pts pos">+5</span>
+                </div>
+                <div class="history-item">
+                    <span class="history-icon">🎟️</span>
+                    <div class="history-details">
+                        <p class="history-title">Redeemed: SU Bar Discount</p>
+                        <p class="history-date">Nov 3</p>
+                    </div>
+                    <span class="history-pts neg">-50</span>
+                </div>
+                <div class="history-item">
+                    <span class="history-icon">🤝</span>
+                    <div class="history-details">
+                        <p class="history-title">Crossed paths: Chloe Davies</p>
+                        <p class="history-date">Nov 1</p>
+                    </div>
+                    <span class="history-pts pos">+5</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Message Context Menu -->
+    <div id="msg-context-modal" class="modal-overlay" onclick="closeMsgContext()">
+        <div class="modal-sheet" onclick="event.stopPropagation()" style="padding-bottom: 20px;">
+            <div class="modal-handle"></div>
+            <div class="react-emoji-bar">
+                <span class="react-emoji" onclick="addReaction('❤️')">❤️</span>
+                <span class="react-emoji" onclick="addReaction('😂')">😂</span>
+                <span class="react-emoji" onclick="addReaction('😮')">😮</span>
+                <span class="react-emoji" onclick="addReaction('😢')">😢</span>
+                <span class="react-emoji" onclick="addReaction('🔥')">🔥</span>
+                <span class="react-emoji" onclick="addReaction('👍')">👍</span>
+            </div>
+            <div class="settings-list" style="margin: 10px 16px; box-shadow: none; border: 1px solid var(--border);">
+                <div class="settings-item" onclick="replyToMessage()">
+                    <span class="settings-icon">↩️</span> Reply <span class="chevron">›</span>
+                </div>
+                <div class="settings-item danger" onclick="reportMessage()">
+                    <span class="settings-icon">🚩</span> Report Message <span class="chevron">›</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <nav class="bottom-nav">
-        <div class="nav-btn active" onclick="switchTo('map',this)">
-            <span class="nav-icon">📍</span>
-            <div class="nav-dot"></div>
-        </div>
-        <div class="nav-btn" onclick="switchTo('messages',this)">
-            <span class="nav-icon">💬</span>
-            <div class="nav-dot"></div>
-        </div>
-        <div class="nav-btn" onclick="switchTo('search',this)">
-            <span class="nav-icon">🔍</span>
-            <div class="nav-dot"></div>
-        </div>
-        <div class="nav-btn" onclick="switchTo('profile',this)">
-            <span class="nav-icon">👤</span>
-            <div class="nav-dot"></div>
-        </div>
+        <div class="nav-btn active" onclick="switchTo('map',this)"><span class="nav-icon">📍</span><div class="nav-dot"></div></div>
+        <div class="nav-btn" onclick="switchTo('messages',this)"><span class="nav-icon">💬</span><div class="nav-dot"></div></div>
+        <div class="nav-btn" onclick="switchTo('search',this)"><span class="nav-icon">🔍</span><div class="nav-dot"></div></div>
+        <div class="nav-btn" onclick="switchTo('profile',this)"><span class="nav-icon">👤</span><div class="nav-dot"></div></div>
     </nav>
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-// ── Global States for Persistence ────────────────────────────
+// ── Global States ────────────────────────────
 const pendingUsers = new Set();
 const goingEvents = new Set();
 let currentActiveChat = null;
 let activeChatAvatar = '👤';
 let activeChatAvatarStyle = '';
+let isAdminMode = false;
 
-// Store message histories per person/society
+// ── Login Flow ──
+function doLogin(e) {
+    e.preventDefault();
+    document.getElementById('screen-login').classList.add('hidden');
+    setTimeout(() => { map.invalidateSize(); }, 400);
+}
+
+function doLogout() {
+    closeSubScreen('screen-settings');
+    switchTo('map', document.querySelectorAll('.nav-btn')[0]);
+    document.getElementById('screen-login').classList.remove('hidden');
+}
+
+// ── Chat Histories ──
 const chatHistories = {
-    'Alex Mercer': [
-        { type: 'received', text: 'Hey! Are you heading out tonight?' },
-        { type: 'sent', text: "Yeah, I saw your intent note. Let's link up at the SU bar first." },
-        { type: 'received', text: "Perfect. I'll be there with 2 others. Look for the society shirts!" }
-    ],
-    'RSS · Russian Speaking Society': [
-        { type: 'received', text: 'Ivan: pre-drinks at mine?' }
-    ],
-    '@brestinou': [
-        { type: 'received', text: 'Yeah I crossed paths with you at the library!' }
-    ],
-    'Sarah M.': [
-        { type: 'received', text: 'Are you heading to the library later?' }
-    ]
+    'My Flat (Woodland Court)': [ { type: 'received', text: 'Maya: Anyone making food?' }, { type: 'received', text: 'Leo: Who is bringing the speaker tonight?' } ],
+    'Alex Mercer': [ { type: 'received', text: 'Hey! Are you heading out tonight?' }, { type: 'sent', text: "Yeah, I saw your intent note. Let's link up at the SU bar first." }, { type: 'received', text: "Perfect. I'll be there with 2 others. Look for the society shirts!" } ],
+    'RSS · Russian Speaking Society': [ { type: 'received', text: 'Ivan: pre-drinks at mine?' } ],
+    '@brestinou': [ { type: 'received', text: 'Yeah I crossed paths with you at the library!' } ],
+    'Sarah M.': [ { type: 'received', text: 'Are you heading to the library later?' } ]
 };
 
 // ── Navigation ──────────────────────────────────────────────
 function switchTo(id, btn) {
+    document.querySelectorAll('.sub-screen').forEach(s => s.classList.remove('active'));
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
     document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
     document.getElementById('screen-' + id).classList.add('active');
     btn.classList.add('active');
+    
     if (id === 'map') setTimeout(() => map.invalidateSize(), 80);
 }
 
-// ── Interactive Features ─────────────────────────────────────
-function setIntentNote() {
-    let note = prompt("What's your intent for the next 12 hours?\n(e.g., 'Heading to the library, need a buddy!')");
+function openSubScreen(id) { document.getElementById(id).classList.add('active'); }
+function closeSubScreen(id) { document.getElementById(id).classList.remove('active'); }
+
+// ── Shared Interactive UI ─────────────────────────────────────
+function toggleSwitch(element) {
+    const track = element.querySelector('.toggle-track');
+    track.classList.toggle('off');
+}
+
+// Intent Note Logic
+function openIntentModal() {
+    document.getElementById('intent-input').value = '';
+    document.getElementById('intent-char-count').innerText = '0/60';
+    document.getElementById('intent-modal').classList.add('active');
+    document.getElementById('intent-input').focus();
+}
+
+function closeIntentModal(e) {
+    if (e && e.target !== e.currentTarget) return;
+    document.getElementById('intent-modal').classList.remove('active');
+}
+
+document.getElementById('intent-input').addEventListener('input', function() {
+    document.getElementById('intent-char-count').innerText = this.value.length + '/60';
+});
+
+function saveIntentNote() {
+    let note = document.getElementById('intent-input').value.trim();
     if(note) {
         let bubble = document.getElementById('user-intent-bubble');
         bubble.innerText = note;
         bubble.style.display = 'block';
     }
+    closeIntentModal();
 }
 
-// Open specific chat conversation
-function openChatView(name, avatar = '👤', avatarStyle = '') {
+function toggleAdminMode() {
+    isAdminMode = !isAdminMode;
+    const statusText = document.getElementById('admin-mode-status');
+    const mapScreen = document.getElementById('screen-map');
+    if (isAdminMode) {
+        statusText.innerText = "ON";
+        statusText.style.color = "var(--accent)";
+        mapScreen.classList.add('admin-mode');
+        alert("Admin Mode ON: Click anywhere on the map to place an event pin.");
+    } else {
+        statusText.innerText = "OFF";
+        statusText.style.color = "var(--navy)";
+        mapScreen.classList.remove('admin-mode');
+    }
+}
+
+// ── Barcode Long Hold & Custom Scroll-to-Close Logic ──
+let barcodePressTimer;
+function startBarcodePress(e) {
+    if(e.type === 'touchstart' || e.type === 'mousedown') {
+        barcodePressTimer = setTimeout(() => {
+            document.getElementById('barcode-modal').classList.add('active');
+            document.getElementById('barcode-modal-sheet').scrollTop = 0; // Reset scroll on open
+        }, 500); 
+    }
+}
+
+function cancelBarcodePress() { clearTimeout(barcodePressTimer); }
+
+function closeBarcodeModal(e) {
+    if (e && (e.target.classList.contains('modal-overlay') || e.target.classList.contains('modal-close-btn') || e.target.id === 'barcode-modal')) {
+        document.getElementById('barcode-modal').classList.remove('active');
+    }
+}
+
+// Sheet Touch Drag-to-Dismiss Logic
+const barcodeSheet = document.getElementById('barcode-modal-sheet');
+let bStartY = 0; let bCurrentY = 0; let isDraggingSheet = false;
+
+barcodeSheet.addEventListener('touchstart', (e) => {
+    // Only allow drag-to-close if we are at the very top of the scroll container
+    if (barcodeSheet.scrollTop <= 0) {
+        bStartY = e.touches[0].clientY;
+        bCurrentY = bStartY;
+        isDraggingSheet = true;
+        barcodeSheet.style.transition = 'none';
+    }
+}, {passive: true});
+
+barcodeSheet.addEventListener('touchmove', (e) => {
+    if (!isDraggingSheet) return;
+    bCurrentY = e.touches[0].clientY;
+    const deltaY = bCurrentY - bStartY;
+
+    if (barcodeSheet.scrollTop <= 0 && deltaY > 0) {
+        barcodeSheet.style.transform = `translateY(${deltaY * 0.5}px)`; // 0.5 resistance
+        e.preventDefault(); 
+    } else {
+        barcodeSheet.style.transform = '';
+    }
+}, {passive: false});
+
+barcodeSheet.addEventListener('touchend', (e) => {
+    if (!isDraggingSheet) return;
+    barcodeSheet.style.transition = 'transform 0.35s cubic-bezier(.32,0,.67,0)';
+    
+    const deltaY = bCurrentY - bStartY;
+    if (deltaY > 120) {
+        // Dragged enough to close
+        document.getElementById('barcode-modal').classList.remove('active');
+        setTimeout(() => { barcodeSheet.style.transform = ''; }, 350);
+    } else {
+        barcodeSheet.style.transform = '';
+    }
+    isDraggingSheet = false;
+});
+
+// Sheet Mousewheel Pull-to-Close Logic (For Desktop testing)
+let wheelAccumulator = 0;
+barcodeSheet.addEventListener('wheel', (e) => {
+    // e.deltaY < 0 means scrolling UP the page (pulling down on content)
+    if (barcodeSheet.scrollTop <= 0 && e.deltaY < 0) {
+        wheelAccumulator += Math.abs(e.deltaY);
+        barcodeSheet.style.transition = 'none';
+        barcodeSheet.style.transform = `translateY(${wheelAccumulator * 0.3}px)`;
+        
+        if (wheelAccumulator > 150) {
+            document.getElementById('barcode-modal').classList.remove('active');
+            wheelAccumulator = 0;
+            // Wait for modal fade before resetting transform
+            setTimeout(() => { 
+                barcodeSheet.style.transform = ''; 
+                barcodeSheet.style.transition = 'transform 0.35s cubic-bezier(.32,0,.67,0)'; 
+            }, 350);
+        }
+        e.preventDefault();
+    } else {
+        wheelAccumulator = 0;
+        barcodeSheet.style.transform = '';
+    }
+}, {passive: false});
+
+// Reset wheel logic if mouse leaves
+barcodeSheet.addEventListener('mouseleave', () => {
+    if(wheelAccumulator > 0 && wheelAccumulator <= 150) {
+        wheelAccumulator = 0;
+        barcodeSheet.style.transition = 'transform 0.3s ease';
+        barcodeSheet.style.transform = '';
+    }
+});
+
+
+// ── Blocked Users Function ──
+function unblockUser(id) {
+    const el = document.getElementById(id);
+    if(el) {
+        el.style.opacity = '0';
+        el.style.transition = 'opacity 0.3s ease';
+        setTimeout(() => { el.remove(); }, 300);
+    }
+}
+
+// ── Chat Logic & Context Menu ────────────────────────────────
+function openChatView(name, avatar = '👤', avatarStyle = '', contextBanner = '') {
     currentActiveChat = name;
     activeChatAvatar = avatar;
     activeChatAvatarStyle = avatarStyle;
 
-    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
     document.getElementById('screen-chat-active').classList.add('active');
     document.getElementById('active-chat-name').innerText = name;
     
-    // Sync bottom nav to messages tab (index 1)
-    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-    document.querySelectorAll('.nav-btn')[1].classList.add('active');
+    const bannerEl = document.getElementById('chat-context-banner');
+    if (contextBanner) {
+        bannerEl.innerText = contextBanner;
+        bannerEl.style.display = 'block';
+    } else {
+        bannerEl.style.display = 'none';
+    }
     
     renderMessages();
 }
 
-// Render messages for current open chat
+function closeChatView() { document.getElementById('screen-chat-active').classList.remove('active'); }
+
+let activeMsgIndex = null;
+let contextMsgText = '';
+let replyingToText = null;
+
+function openMsgContext(index) {
+    activeMsgIndex = index;
+    contextMsgText = chatHistories[currentActiveChat][index].text;
+    document.getElementById('msg-context-modal').classList.add('active');
+}
+
+function closeMsgContext() {
+    document.getElementById('msg-context-modal').classList.remove('active');
+    activeMsgIndex = null;
+}
+
+function addReaction(emoji) {
+    if (activeMsgIndex === null) return;
+    const msg = chatHistories[currentActiveChat][activeMsgIndex];
+    if (!msg.reactions) msg.reactions = [];
+    if (!msg.reactions.includes(emoji)) msg.reactions.push(emoji);
+    renderMessages();
+    closeMsgContext();
+}
+
+function replyToMessage() {
+    if (activeMsgIndex === null) return;
+    closeMsgContext();
+    document.getElementById('reply-banner').style.display = 'flex';
+    document.getElementById('reply-text').innerText = contextMsgText;
+    replyingToText = contextMsgText;
+    document.getElementById('chat-input-field').focus();
+}
+
+function cancelReply() { document.getElementById('reply-banner').style.display = 'none'; replyingToText = null; }
+
+function reportMessage() { alert('Message reported to campus admins for review.'); closeMsgContext(); }
+
 function renderMessages() {
     const container = document.getElementById('chat-messages-container');
     container.innerHTML = '';
     const history = chatHistories[currentActiveChat] || [];
     
-    history.forEach(msg => {
+    history.forEach((msg, index) => {
+        const wrap = document.createElement('div');
+        wrap.className = `msg-wrap msg-wrap-${msg.type}`;
+        wrap.style.display = 'flex';
+        wrap.style.flexDirection = 'column';
+        wrap.style.alignItems = msg.type === 'sent' ? 'flex-end' : 'flex-start';
+
         const div = document.createElement('div');
         div.className = `msg-bubble msg-${msg.type}`;
-        div.innerText = msg.text;
-        container.appendChild(div);
+        
+        let innerHTML = '';
+        if (msg.replyTo) {
+            let replyBg = msg.type === 'sent' ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.05)';
+            let replyBorder = msg.type === 'sent' ? 'var(--accent)' : 'var(--navy)';
+            innerHTML += `<div style="background:${replyBg}; padding:6px 10px; border-radius:8px; font-size:11px; margin-bottom:6px; border-left:3px solid ${replyBorder}; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; opacity:0.9;">↩ ${msg.replyTo}</div>`;
+        }
+        innerHTML += msg.text;
+        div.innerHTML = innerHTML;
+
+        div.oncontextmenu = (e) => { e.preventDefault(); openMsgContext(index); };
+        let pressTimer;
+        div.ontouchstart = (e) => { pressTimer = setTimeout(() => { openMsgContext(index); }, 500); };
+        div.ontouchend = () => clearTimeout(pressTimer);
+        div.ontouchcancel = () => clearTimeout(pressTimer);
+        div.ontouchmove = () => clearTimeout(pressTimer);
+        div.onmousedown = (e) => { if (e.button === 0) pressTimer = setTimeout(() => { openMsgContext(index); }, 500); };
+        div.onmouseup = () => clearTimeout(pressTimer);
+        div.onmouseleave = () => clearTimeout(pressTimer);
+
+        wrap.appendChild(div);
+
+        if (msg.reactions && msg.reactions.length > 0) {
+            const reacts = document.createElement('div');
+            reacts.style.fontSize = '12px';
+            reacts.style.marginTop = '-8px';
+            reacts.style.marginBottom = '4px';
+            reacts.style.background = 'var(--card)';
+            reacts.style.border = '1px solid var(--border)';
+            reacts.style.borderRadius = '12px';
+            reacts.style.padding = '2px 6px';
+            reacts.style.zIndex = '2';
+            reacts.style.boxShadow = 'var(--shadow-sm)';
+            reacts.style.alignSelf = msg.type === 'sent' ? 'flex-end' : 'flex-start';
+            reacts.innerText = msg.reactions.join('');
+            wrap.appendChild(reacts);
+        }
+
+        container.appendChild(wrap);
     });
-    
-    // Scroll to bottom
     container.scrollTop = container.scrollHeight;
 }
 
-// Listen for enter key on input
-function handleChatKeyPress(e) {
-    if (e.key === 'Enter') {
-        sendMessage();
-    }
-}
+function handleChatKeyPress(e) { if (e.key === 'Enter') sendMessage(); }
 
-// Send message logic and dynamically update list at the top
 function sendMessage() {
     const input = document.getElementById('chat-input-field');
     const text = input.value.trim();
     if (!text) return;
-
-    if (!chatHistories[currentActiveChat]) {
-        chatHistories[currentActiveChat] = [];
+    if (!chatHistories[currentActiveChat]) chatHistories[currentActiveChat] = [];
+    
+    let msgObj = { type: 'sent', text: text };
+    if (replyingToText) {
+        msgObj.replyTo = replyingToText;
+        cancelReply();
     }
     
-    chatHistories[currentActiveChat].push({ type: 'sent', text: text });
+    chatHistories[currentActiveChat].push(msgObj);
     input.value = '';
     renderMessages();
-    
-    // Update preview in the main messages list & move to top
     updateMainChatList(currentActiveChat, text);
 }
 
 function updateMainChatList(name, text) {
     const list = document.getElementById('main-messages-list');
     let items = Array.from(list.querySelectorAll('.chat-item'));
-    let existingItem = items.find(item => item.querySelector('.chat-name').innerText === name);
+    let existingItem = items.find(item => item.querySelector('.chat-name').innerText.includes(name));
 
     if (existingItem) {
         existingItem.querySelector('.chat-preview').innerText = "You: " + text;
         existingItem.querySelector('.chat-time').innerText = "now";
-        list.prepend(existingItem); // Move to top of the list
+        list.prepend(existingItem);
     } else {
-        // Create new item if it doesn't exist yet
         let li = document.createElement('li');
         li.className = 'chat-item';
-        
-        // Save the current scope parameters properly
-        let avatarToSave = activeChatAvatar;
-        let styleToSave = activeChatAvatarStyle;
-        
-        li.onclick = () => openChatView(name, avatarToSave, styleToSave);
-        
-        li.innerHTML = `
-            <div class="avatar" style="${activeChatAvatarStyle}">${activeChatAvatar}</div>
-            <div class="chat-info">
-                <p class="chat-name">${name}</p>
-                <p class="chat-preview">You: ${text}</p>
-            </div>
-            <span class="chat-time">now</span>
-        `;
+        let a = activeChatAvatar, s = activeChatAvatarStyle;
+        li.onclick = () => openChatView(name, a, s);
+        li.innerHTML = `<div class="avatar" style="${s}">${a}</div><div class="chat-info"><p class="chat-name">${name}</p><p class="chat-preview">You: ${text}</p></div><span class="chat-time">now</span>`;
         list.prepend(li);
     }
 }
 
-// Back button in active chat
-function closeChatView() {
-    document.getElementById('screen-chat-active').classList.remove('active');
-    document.getElementById('screen-messages').classList.add('active');
-}
+// ── Search & Filter Logic ────────────────────────────────────
+let showNewPeople = false;
+function toggleNewPeople() { showNewPeople = !showNewPeople; document.getElementById('new-people-track').classList.toggle('off', !showNewPeople); runSearch(); }
 
-function triggerReport() {
-    alert("Safety & Reporting\n\nBridge operates a zero-tolerance/one-strike policy. Reports are monitored and reviewed by admins to ensure a high-trust campus environment.");
-}
+function runSearch() {
+    const q = document.getElementById('searchInput').value.toLowerCase();
+    const fYear = document.getElementById('filter-year').value;
+    const fCourse = document.getElementById('filter-course').value;
+    const fInterest = document.getElementById('filter-interest').value;
+    
+    const list = document.getElementById('peopleList');
+    const emptyState = document.getElementById('empty-search-state');
+    const items = Array.from(list.querySelectorAll('.search-row'));
+    let matches = 0;
 
-function triggerEditProfile() {
-    alert("Edit Profile\n\nHere you would add your Spotify integration, edit your course details, and manage your visibility preferences.");
-}
+    items.forEach(row => {
+        const text = row.querySelector('.chat-name').innerText.toLowerCase();
+        const year = row.dataset.year || '';
+        const course = row.dataset.course || '';
+        const interest = row.dataset.interest || '';
+        const isFriend = row.dataset.friend === 'true';
 
-// Persistent "I'm Going" functionality
+        let match = text.includes(q);
+        
+        if (fYear !== 'all' && year !== fYear) match = false;
+        if (fCourse !== 'all' && course !== fCourse) match = false;
+        if (fInterest !== 'all' && !interest.includes(fInterest)) match = false;
+        if (!showNewPeople && !isFriend) match = false;
+
+        if (match) { row.style.display = 'flex'; matches++; } else { row.style.display = 'none'; }
+    });
+    
+    emptyState.style.display = matches === 0 ? 'block' : 'none';
+    
+    items.sort((a, b) => {
+        let aFriend = a.dataset.friend === 'true' ? 1 : 0;
+        let bFriend = b.dataset.friend === 'true' ? 1 : 0;
+        return bFriend - aFriend;
+    });
+    
+    items.forEach(item => list.appendChild(item));
+}
+runSearch();
+
+// ── Shared Modals & Actions ───────────────────────────────────
 function toggleGoing(btn, eventId) {
     if (goingEvents.has(eventId)) {
         goingEvents.delete(eventId);
@@ -1285,63 +1356,23 @@ function toggleGoing(btn, eventId) {
         goingEvents.add(eventId);
         btn.classList.add('going');
         btn.textContent = "✓ You're going!";
-        alert("You've registered for this event! If you attend and verify your location, you'll earn Bridge Barcode points.");
+        alert("You've registered for this event! Attend and verify to earn Barcode points.");
     }
 }
 
-
-// ── Location Toggle ──────────────────────────────────────────
 let locOn = true;
 function toggleLoc() {
     locOn = !locOn;
     const track = document.getElementById('loc-track');
-    const label = document.getElementById('loc-label');
+    document.getElementById('loc-label').textContent = locOn ? 'Location On' : 'Location Off';
     track.classList.toggle('off', !locOn);
-    label.textContent = locOn ? 'Location On' : 'Location Off';
-    if (locOn) { userMarker.addTo(map); }
-    else { map.removeLayer(userMarker); }
+    if (locOn) userMarker.addTo(map); else map.removeLayer(userMarker);
 }
 
-// ── Search / Filter ──────────────────────────────────────────
-let activeFilter = 'all';
-function setFilter(el, word) {
-    document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
-    el.classList.add('active');
-    activeFilter = word.toLowerCase();
-    runSearch();
-}
-function runSearch() {
-    const q = document.getElementById('searchInput').value.toLowerCase();
-    const list = document.getElementById('peopleList');
-    const items = Array.from(list.querySelectorAll('.search-row'));
-
-    items.forEach(row => {
-        const text = row.innerText.toLowerCase();
-        const tags = row.dataset.tags.toLowerCase();
-        const match = (text.includes(q) && (activeFilter === 'all' || tags.includes(activeFilter)));
-        row.style.display = match ? '' : 'none';
-    });
-    
-    // Sort logic: 'Bridged' items (true) should appear above 'Unbridged' items (false)
-    items.sort((a, b) => {
-        const aBridged = a.dataset.bridged === 'true' ? 1 : 0;
-        const bBridged = b.dataset.bridged === 'true' ? 1 : 0;
-        return bBridged - aBridged;
-    });
-    
-    // Re-append to DOM in new sorted order
-    items.forEach(item => list.appendChild(item));
-}
-
-// Initial sorting on load
-runSearch();
-
-// ── Modal & Persistent Pending State ──────────────────────────
 function openModal(name, avatar, course, interests, date, method, isBridgedHtml) {
     document.getElementById('m-name').textContent = name;
     document.getElementById('m-avatar').textContent = avatar;
     
-    // Extract background inline-style for modal display
     const triggerEl = event.currentTarget;
     const avatarEl = triggerEl ? triggerEl.querySelector('.avatar') : null;
     let avatarStyle = avatarEl ? avatarEl.style.cssText : '';
@@ -1353,111 +1384,100 @@ function openModal(name, avatar, course, interests, date, method, isBridgedHtml)
     document.getElementById('m-method').textContent = method;
     
     const btn = document.getElementById('modal-action-btn');
-    
     if (isBridgedHtml) {
-        btn.className = 'modal-cta';
-        btn.innerText = '💬 Message';
-        btn.onclick = () => {
-            openChatView(name, avatar, avatarStyle);
-            closeModal();
-        };
+        btn.className = 'modal-cta'; btn.innerText = '💬 Message';
+        btn.onclick = () => { openChatView(name, avatar, avatarStyle); closeModal(); };
     } else if (pendingUsers.has(name)) {
-        btn.className = 'modal-cta pending';
-        btn.innerText = '⏳ Pending';
-        btn.onclick = null;
+        btn.className = 'modal-cta pending'; btn.innerText = '⏳ Pending'; btn.onclick = null;
     } else {
-        btn.className = 'modal-cta bridge-btn';
-        btn.innerText = '➕ Bridge';
-        btn.onclick = () => {
-            pendingUsers.add(name);
-            btn.innerText = '⏳ Pending';
-            btn.classList.add('pending');
-            btn.onclick = null; // disable further clicks
-        };
+        btn.className = 'modal-cta bridge-btn'; btn.innerText = '➕ Bridge';
+        btn.onclick = () => { pendingUsers.add(name); btn.innerText = '⏳ Pending'; btn.classList.add('pending'); btn.onclick = null; };
     }
-
     document.getElementById('modal').classList.add('active');
 }
 function closeModal() { document.getElementById('modal').classList.remove('active'); }
 function handleModalClick(e) { if (e.target === document.getElementById('modal')) closeModal(); }
 
-// ── Map ───────────────────────────────────────────────────────
-const map = L.map('screen-map', {
-    zoomControl: false,
-    attributionControl: false,
-    zoomAnimation: true
-}).setView([51.3800, -2.3530], 15);
+// ── Map Integration ───────────────────────────────────────────
+const map = L.map('screen-map', { zoomControl: false, attributionControl: false, zoomAnimation: true }).setView([51.3800, -2.3530], 15);
+L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', { maxZoom: 19 }).addTo(map);
 
-L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-    maxZoom: 19
-}).addTo(map);
+map.on('popupopen', function(e) {
+    const marker = e.popup._source;
+    if (marker) {
+        const px = map.project(marker.getLatLng()); 
+        px.y -= 50; 
+        map.setView(map.unproject(px), 16, { animate: true, duration: 0.4 });
+    }
+});
 
-// ── Heatmaps as geo-circles (auto-scale with zoom) ──────────
+map.on('click', function(e) {
+    if (!isAdminMode) return;
+    let title = prompt("Admin Mode: Enter Event Title:");
+    if (!title) return;
+    let desc = prompt("Admin Mode: Enter Event Description:");
+    if (!desc) desc = "Custom Campus Event";
+    let eventId = 'custom-' + Date.now();
+    let shortTitle = title.length > 8 ? title.substring(0, 8) + '...' : title;
+
+    L.marker(e.latlng, { icon: makePin('⭐', shortTitle) }).addTo(map)
+        .bindPopup(() => {
+            let isGoing = goingEvents.has(eventId);
+            let btnClass = isGoing ? 'popup-btn going' : 'popup-btn';
+            let btnText = isGoing ? "✓ You're going!" : "I'm going!";
+            return `<div class="popup-tag">● Created by @You</div><p class="popup-title">${title}</p><p class="popup-sub">${desc}</p><p class="popup-count"><span>0 people going</span><span class="popup-friends">0 friends going</span></p><button class="${btnClass}" onclick="toggleGoing(this, '${eventId}')">${btnText}</button>`;
+        }, { className: '', closeButton: false, offset: [0,-36], autoPan: false }).openPopup();
+});
+
 const hotspots = [
-    { lat: 51.3800, lng: -2.3585, radii: [60, 130, 220], color: '#FF4444' },  // Labyrinth
-    { lat: 51.3795, lng: -2.3255, radii: [50, 110, 190], color: '#4444FF' },  // Library
-    { lat: 51.3820, lng: -2.3580, radii: [35, 80, 140],  color: '#FF8844' },  // Abbey
-    { lat: 51.3785, lng: -2.3270, radii: [30, 70, 130],  color: '#4499FF' },  // Sports Village
-    { lat: 51.3835, lng: -2.3615, radii: [25, 60, 110],  color: '#FF9933' },  // George St
-    { lat: 51.3815, lng: -2.3650, radii: [20, 50, 95],   color: '#FF5533' },  // Quays
+    { lat: 51.3800, lng: -2.3585, radii: [60, 130, 220], color: '#FF4444', livePulse: true },
+    { lat: 51.3795, lng: -2.3255, radii: [50, 110, 190], color: '#4444FF', livePulse: true },
+    { lat: 51.3820, lng: -2.3580, radii: [35, 80, 140],  color: '#FF8844', livePulse: true },
+    { lat: 51.3785, lng: -2.3270, radii: [30, 70, 130],  color: '#4499FF', livePulse: true },
+    { lat: 51.3835, lng: -2.3615, radii: [25, 60, 110],  color: '#FF9933', livePulse: true }
 ];
-
 const opacities = [0.38, 0.18, 0.07];
 
 hotspots.forEach(h => {
     h.radii.forEach((r, i) => {
-        L.circle([h.lat, h.lng], {
-            radius: r,
-            color: 'transparent',
-            fillColor: h.color,
-            fillOpacity: opacities[i],
-            interactive: false
-        }).addTo(map);
+        let circle = L.circle([h.lat, h.lng], { radius: r, color: 'transparent', fillColor: h.color, fillOpacity: opacities[i], interactive: false }).addTo(map);
+        if (h.livePulse && i === h.radii.length - 1) circle._path.classList.add('pulse-circle');
     });
 });
 
-// ── Event Pins ───────────────────────────────────────────────
-function makePin(icon, label) {
-    return L.divIcon({
-        className: '',
-        html: `<div class="map-pin"><div class="pin-body"><span class="pin-emoji">${icon}</span></div><div class="pin-label">${label}</div></div>`,
-        iconSize: [0, 0]
-    });
-}
-
+function makePin(icon, label) { return L.divIcon({ className: '', html: `<div class="map-pin"><div class="pin-body"><span class="pin-emoji">${icon}</span></div><div class="pin-label">${label}</div></div>`, iconSize: [0, 0] }); }
 function makePopup(tag, title, sub, count, friendsCount, eventId) {
     let isGoing = goingEvents.has(eventId);
     let btnClass = isGoing ? 'popup-btn going' : 'popup-btn';
     let btnText = isGoing ? "✓ You're going!" : "I'm going!";
-    
-    return `
-        <div class="popup-tag">● ${tag}</div>
-        <p class="popup-title">${title}</p>
-        <p class="popup-sub">${sub}</p>
-        <p class="popup-count">
-            <span>${count}</span>
-            <span class="popup-friends">${friendsCount} friends going</span>
-        </p>
-        <button class="${btnClass}" onclick="toggleGoing(this, '${eventId}')">${btnText}</button>
-    `;
+    return `<div class="popup-tag">● ${tag}</div><p class="popup-title">${title}</p><p class="popup-sub">${sub}</p><p class="popup-count"><span>${count}</span><span class="popup-friends">${friendsCount} friends going</span></p><button class="${btnClass}" onclick="toggleGoing(this, '${eventId}')">${btnText}</button>`;
 }
 
-L.marker([51.3800, -2.3585], { icon: makePin('🎉','Labyrinth') }).addTo(map)
-    .bindPopup(makePopup('Hosted by SU', 'Labyrinth Bath', 'Skint Monday · 11pm', '150+ people going', '5', 'event-labyrinth'), { className: '', closeButton: false, offset: [0,-36] });
+L.marker([51.3800, -2.3585], { icon: makePin('🎉','Labyrinth') }).addTo(map).bindPopup(() => makePopup('Hosted by SU', 'Labyrinth Bath', 'Skint Monday · 11pm', '150+ people going', '5', 'event-labyrinth'), { className: '', closeButton: false, offset: [0,-36], autoPan: false });
+L.marker([51.3795, -2.3255], { icon: makePin('📚','Library') }).addTo(map).bindPopup(() => makePopup('Academic Reps', 'Campus Library', 'Late night study', '80+ students here', '2', 'event-library'), { className: '', closeButton: false, offset: [0,-36], autoPan: false });
+L.marker([51.3820, -2.3580], { icon: makePin('🏛️','Abbey') }).addTo(map).bindPopup(() => makePopup('History Soc', 'Abbey Meetup', 'City walking tour', '20+ going', '1', 'event-abbey'), { className: '', closeButton: false, offset: [0,-36], autoPan: false });
 
-L.marker([51.3795, -2.3255], { icon: makePin('📚','Library') }).addTo(map)
-    .bindPopup(makePopup('Academic Reps', 'Campus Library', 'Late night study', '80+ students here', '2', 'event-library'), { className: '', closeButton: false, offset: [0,-36] });
+function makeFriendPin(emoji, name, borderColor) { return L.divIcon({ className: '', html: `<div class="friend-pin-wrap"><div class="friend-pin-body" style="border-color:${borderColor}">${emoji}</div><div class="friend-pin-label">${name}</div></div>`, iconSize: [0, 0] }); }
+function makeFriendPopup(name, avatar, course, lastSeen, avatarStyle) {
+    return `<div class="popup-tag" style="background: rgba(59,130,246,0.15); color: #3B82F6; border-color: rgba(59,130,246,0.3);">● Friend</div><p class="popup-title">${name}</p><p class="popup-sub">${course}</p><p class="popup-count" style="margin-bottom: 8px;"><span style="color: rgba(255,255,255,0.7); font-weight: 500;">Last seen: ${lastSeen}</span></p><button class="popup-btn" style="background: #3B82F6; color: white;" onclick="openChatView('${name}', '${avatar}', '${avatarStyle}')">💬 Message</button>`;
+}
 
-L.marker([51.3820, -2.3580], { icon: makePin('🏛️','Abbey') }).addTo(map)
-    .bindPopup(makePopup('History Soc', 'Abbey Meetup', 'City walking tour', '20+ going', '1', 'event-abbey'), { className: '', closeButton: false, offset: [0,-36] });
+L.marker([51.3790, -2.3510], { icon: makeFriendPin('👨‍🎓', 'Alex', '#3B82F6') }).addTo(map).bindPopup(() => makeFriendPopup('Alex Mercer', '👨‍🎓', 'Mechanical Engineering', '5m ago', 'background:#EFF6FF;border-color:#BFDBFE;'), { className: '', closeButton: false, offset: [0,-36], autoPan: false });
+L.marker([51.3810, -2.3550], { icon: makeFriendPin('📚', 'Sarah', '#4ADE80') }).addTo(map).bindPopup(() => makeFriendPopup('Sarah M.', '📚', 'English Literature', '1h ago', 'background:#DCFCE7;border-color:#BBF7D0;'), { className: '', closeButton: false, offset: [0,-36], autoPan: false });
 
-// ── User Pin ─────────────────────────────────────────────────
-const userIcon = L.divIcon({
-    className: '',
-    html: `<div class="user-pin-wrap"><div class="user-pin-body"><span>📍</span></div><div class="user-pin-label">YOU</div></div>`,
-    iconSize: [0, 0]
-});
+// User Pin with share location popup
+const userIcon = L.divIcon({ className: '', html: `<div class="user-pin-wrap"><div class="user-pin-body"><span>📍</span></div><div class="user-pin-label">YOU</div></div>`, iconSize: [0, 0] });
 const userMarker = L.marker([51.3780, -2.3520], { icon: userIcon }).addTo(map);
+
+const userPopupHtml = `
+    <div class="popup-title" style="text-align:center;">Share Location</div>
+    <div class="popup-sub" style="text-align:center; margin-bottom:12px;">Who can see you on the map?</div>
+    <button class="popup-btn" style="background:var(--accent); color:var(--navy);" onclick="alert('Location visible to Everyone')">🌍 Everyone</button>
+    <button class="popup-btn" style="background:rgba(255,255,255,0.15); color:white; border: 1px solid rgba(255,255,255,0.2);" onclick="alert('Location visible to Friends Only')">👥 Friends Only</button>
+    <button class="popup-btn" style="background:rgba(248,113,113,0.15); color:#F87171; border: 1px solid rgba(248,113,113,0.3);" onclick="alert('Ghost Mode On')">👻 Ghost Mode</button>
+`;
+userMarker.bindPopup(userPopupHtml, { className: '', closeButton: false, offset: [0,-36], autoPan: false });
+
 </script>
 </body>
 </html>
